@@ -120,7 +120,7 @@ export function Module<Schema extends SchemaConstraint>(
                     });
                 }
             }
-            return {
+            const accessor = {
                 state: instance.$__store__.state[name],
                 getters: myGetters,
                 dispatch: async function(action: string, payload: unknown) {
@@ -146,6 +146,17 @@ export function Module<Schema extends SchemaConstraint>(
                     }
                 }
             };
+            //if you commit mutations from the devtools the state is replaced
+            //so the reference we have is now invalid.
+            //With a getter we can always point to the current state object
+            if (process.client) {
+                Object.defineProperty(accessor, "state", {
+                    get: function() {
+                        return instance.$__store__.state[name];
+                    }
+                });
+            }
+            return accessor;
         }
     };
 }
