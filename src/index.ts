@@ -1,7 +1,7 @@
 import {join} from "path";
 import {utimesSync} from "fs";
 import {Module} from "@nuxt/types";
-import {discover} from "./discover";
+import {getDiscover} from "./discover";
 
 const collider: Module = function(_moduleOptions: unknown) {
     //disable core vuex
@@ -11,6 +11,7 @@ const collider: Module = function(_moduleOptions: unknown) {
 
     //TODO library files (things we just need to import, not to use them as plugins)
     //could be added as templates .addTemplate
+    //or just require them as "collider/stateTree" etc and not add them at all?
     this.addPlugin({
         src: join(__dirname, "stateTree.js"),
         fileName: "./collider/stateTree.js",
@@ -35,22 +36,24 @@ const collider: Module = function(_moduleOptions: unknown) {
         mode: "client"
     });
 
+    const nuxtRootStoreDir = join(this.options.rootDir, "store");
+
     const moduleLoaderPath = join(__dirname, "..", "templates", "moduleLoader.js");
     this.addPlugin({
-        src: join(__dirname, "..", "templates", "moduleLoader.js"),
-        fileName: "./collider/modules.ts",
+        src: moduleLoaderPath,
+        fileName: "./collider/modules.js",
         options: {
-            discover: discover.bind(this)
+            discover: getDiscover("../../store", nuxtRootStoreDir)
         }
     });
 
     const serverDispatcherPath = join(__dirname, "..", "templates",  "serverDispatcher.js");
     this.addPlugin({
-        src: join(__dirname, "..", "templates",  "serverDispatcher.js"),
-        fileName: "./collider/serverDispatcher.ts",
+        src: serverDispatcherPath,
+        fileName: "./collider/serverDispatcher.js",
         mode: "server",
         options: {
-            discover: discover.bind(this)
+            discover: getDiscover("../../store", nuxtRootStoreDir)
         }
     });
 
@@ -66,7 +69,7 @@ const collider: Module = function(_moduleOptions: unknown) {
         src: typeLoaderPath,
         fileName: "../storeTypes.ts",
         options: {
-            discover: discover.bind(this)
+            discover: getDiscover("./store", nuxtRootStoreDir)
         }
     });
 

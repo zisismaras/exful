@@ -1,7 +1,6 @@
 /*
   Auto-generated type definitions
 */
-/* eslint-disable */
 
 <%(function() {
     options.modules = options.discover();
@@ -36,12 +35,4 @@ declare module "@nuxt/types" {
         <% } %>
     };
   }
-}
-
-export interface Context {
-  $store: {
-        <% for (const mod of options.modules) { %>
-        "<%= mod.name %>": ReturnType<typeof <%= mod.name %>>
-        <% } %>
-  };
 }

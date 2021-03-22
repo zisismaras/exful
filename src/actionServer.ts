@@ -1,4 +1,3 @@
-import {resolve} from "path";
 import {readdirSync, existsSync, statSync} from "fs";
 import Express from "express";
 import {createActionContext, applyMutations} from "./actionRunner";
@@ -12,7 +11,7 @@ if (process.env.NODE_ENV !== "production") {
 
 //TODO hardcoded
 //need to find a way to use rootDir like buildtime
-const storeDir = resolve("..", "rocketsaas-nuxt", "store");
+const storeDir = "../rocketsaas-nuxt/store";
 if (!existsSync(storeDir) || !statSync(storeDir).isDirectory()) {
     throw new Error("No store directory");
 }
