@@ -3,15 +3,14 @@ import Express from "express";
 import {createActionContext, applyMutations} from "./actionRunner";
 import {renewConnection} from "./stateTree";
 
-//on development always require store modules
+//on development don't cache required store modules
 let storeRequire = require;
 if (process.env.NODE_ENV !== "production") {
     storeRequire = require("import-fresh");
 }
 
-//TODO hardcoded
-//need to find a way to use rootDir like buildtime
-const storeDir = "../rocketsaas-nuxt/store";
+//@ts-ignore
+const storeDir: string = global.__nuxtRootStoreDir;
 if (!existsSync(storeDir) || !statSync(storeDir).isDirectory()) {
     throw new Error("No store directory");
 }

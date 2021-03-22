@@ -57,6 +57,13 @@ const collider: Module = function(_moduleOptions: unknown) {
         }
     });
 
+    /*
+        Can't think of a good way to pass the rootDir to the serverMiddleware
+        while also having working server reloads on store change in development.
+        So we'll just use a global.
+    */
+    //@ts-ignore
+    global.__nuxtRootStoreDir = nuxtRootStoreDir;
     const actionServerPath = join(__dirname, "actionServer.js");
     this.addServerMiddleware({
         path: "/store",
