@@ -3,7 +3,7 @@ import {utimesSync} from "fs";
 import {Module} from "@nuxt/types";
 import {getDiscover} from "./discover";
 
-const collider: Module = function(_moduleOptions: unknown) {
+const exful: Module = function(_moduleOptions: unknown) {
     //disable core vuex
     if (this.options.features) {
         this.options.features.store = false;
@@ -11,28 +11,28 @@ const collider: Module = function(_moduleOptions: unknown) {
 
     //TODO library files (things we just need to import, not to use them as plugins)
     //could be added as templates .addTemplate
-    //or just require them as "collider/stateTree" etc and not add them at all?
+    //or just require them as "exful/stateTree" etc and not add them at all?
     this.addPlugin({
         src: join(__dirname, "stateTree.js"),
-        fileName: "./collider/stateTree.js",
+        fileName: "./exful/stateTree.js",
         mode: "server"
     });
 
     this.addPlugin({
         src: join(__dirname, "actionRunner.js"),
-        fileName: "./collider/actionRunner.js",
+        fileName: "./exful/actionRunner.js",
         mode: "server"
     });
 
     this.addPlugin({
         src: join(__dirname, "createConnection.js"),
-        fileName: "./collider/createConnection.js",
+        fileName: "./exful/createConnection.js",
         mode: "server"
     });
 
     this.addPlugin({
         src: join(__dirname, "ping.js"),
-        fileName: "./collider/ping.js",
+        fileName: "./exful/ping.js",
         mode: "client"
     });
 
@@ -41,7 +41,7 @@ const collider: Module = function(_moduleOptions: unknown) {
     const moduleLoaderPath = join(__dirname, "..", "templates", "moduleLoader.js");
     this.addPlugin({
         src: moduleLoaderPath,
-        fileName: "./collider/modules.js",
+        fileName: "./exful/modules.js",
         options: {
             discover: getDiscover("../../store", nuxtRootStoreDir)
         }
@@ -50,7 +50,7 @@ const collider: Module = function(_moduleOptions: unknown) {
     const serverDispatcherPath = join(__dirname, "..", "templates",  "serverDispatcher.js");
     this.addPlugin({
         src: serverDispatcherPath,
-        fileName: "./collider/serverDispatcher.js",
+        fileName: "./exful/serverDispatcher.js",
         mode: "server",
         options: {
             discover: getDiscover("../../store", nuxtRootStoreDir)
@@ -96,4 +96,4 @@ const collider: Module = function(_moduleOptions: unknown) {
     }
 };
 
-export default collider;
+export default exful;
