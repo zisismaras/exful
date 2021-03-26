@@ -1,5 +1,5 @@
 import {Plugin} from "@nuxt/types";
-import {newConnection} from "./stateTree";
+import {newConnection} from "~exful/stateTree";
 
 const createConnection: Plugin = async function(context, inject) {
     const connectionId = await newConnection();

@@ -1,4 +1,4 @@
-import {createActionContext, applyMutations} from "./actionRunner";
+import {createActionContext, applyMutations} from "~exful/actionRunner";
 
 <%(function() {
     options.modules = options.discover();

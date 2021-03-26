@@ -9,20 +9,7 @@ const exful: Module = function(_moduleOptions: unknown) {
         this.options.features.store = false;
     }
 
-    //TODO library files (things we just need to import, not to use them as plugins)
-    //could be added as templates .addTemplate
-    //or just require them as "exful/stateTree" etc and not add them at all?
-    this.addPlugin({
-        src: join(__dirname, "stateTree.js"),
-        fileName: "./exful/stateTree.js",
-        mode: "server"
-    });
-
-    this.addPlugin({
-        src: join(__dirname, "actionRunner.js"),
-        fileName: "./exful/actionRunner.js",
-        mode: "server"
-    });
+    this.nuxt.options.alias["~exful"] = __dirname;
 
     this.addPlugin({
         src: join(__dirname, "createConnection.js"),
