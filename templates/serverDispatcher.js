@@ -1,6 +1,6 @@
 import ExpressRequest from "~express/request";
 import ExpressResponse from "~express/response";
-import {createActionContext, applyMutations} from "~exful/actionRunner";
+import {createActionContext, applyMutations, runAction} from "~exful/actionRunner";
 
 <%(function() {
     options.modules = options.discover();
@@ -17,6 +17,9 @@ import {createActionContext, applyMutations} from "~exful/actionRunner";
     <% } %>
     <% if (mod.mutations) { %>
         import Mutations_<%= mod.name %> from "<%= mod.mutations %>";
+    <% } %>
+    <% if (mod.hooks) { %>
+        import Hooks_<%= mod.name %> from "<%= mod.hooks %>";
     <% } %>
 <% } %>
 
@@ -35,31 +38,51 @@ const moduleTree = {
             <% if (mod.mutations) { %>
                 mutations: Mutations_<%= mod.name %>,
             <% } %>
+            <% if (mod.hooks) { %>
+                hooks: Hooks_<%= mod.name %>,
+            <% } %>
         },
     <% } %>
 };
 function getDispatch(req, res) {
     return async function dispatch(connectionId, moduleName, actionName, payload) {
-        const {actionContext, commitTracker, currentStates} = await createActionContext({
-            connectionId,
-            moduleName,
-            moduleTree,
-            req,
-            res,
-            isSSR: true
-        });
-        const actionResult = await moduleTree[moduleName].actions[actionName](actionContext, payload);
-        await applyMutations({
-            connectionId,
-            moduleTree,
-            commitTracker,
-            currentStates
-        });
-
-        return {
-            actionResult,
-            mutations: commitTracker
-        };
+        try {
+            const {actionContext, commitTracker, currentStates} = await createActionContext({
+                connectionId,
+                moduleName,
+                moduleTree,
+                req,
+                res,
+                isSSR: true
+            });
+            const actionResult = await runAction({
+                moduleName,
+                moduleTree,
+                commitTracker,
+                actionName,
+                actionContext,
+                actionPayload: payload,
+                isSSR: true
+            });
+            await applyMutations({
+                connectionId,
+                moduleTree,
+                commitTracker,
+                currentStates
+            });
+    
+            return {
+                status: "ok",
+                result: {
+                    actionResult,
+                    mutations: commitTracker
+                }
+            };
+        } catch (_e) {
+            return {
+                status: "error"
+            }
+        }
     }
 }
 

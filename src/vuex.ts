@@ -14,14 +14,14 @@ type SchemaConstraint = Partial<{
 type Optional<T, Constraint> = T extends Constraint ? T : never;
 
 type Dispatch<Actions extends ActionConstraint> = {
-    <key extends keyof Actions>(
+    <key extends keyof Actions & string>(
         action: key,
         payload: Parameters<Actions[key]>[0]
     ): ReturnType<Actions[key]> extends Promise<any> ? ReturnType<Actions[key]> : Promise<ReturnType<Actions[key]>>
 };
 
 type Commit<Mutations extends MutationConstraint> = {
-    <key extends keyof Mutations>(
+    <key extends keyof Mutations & string>(
         action: key,
         payload: Parameters<Mutations[key]>[0]
     ): ReturnType<Mutations[key]>
@@ -41,6 +41,7 @@ type ActionContext<State, Getters, Mutations, Actions> = {
     res: Response,
     isSSR: boolean
 }
+export type AbstractActionContext = ActionContext<StateConstraint, GetterConstraint, MutationConstraint, ActionConstraint>;
 
 type StateCreator<Schema extends SchemaConstraint> = {
     (stateFn: () => Optional<Schema["state"], StateConstraint>): void
@@ -201,12 +202,16 @@ export function Module<Schema extends SchemaConstraint>(
                         return result.data.actionResult;
                     } else {
                         //serverDispatcher
-                        const result = await instance.$dispatch(instance.$connectionId, name, action, payload);
-                        //apply mutations on actual store
-                        for (const commit of result.mutations) {
-                            instance.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
+                        const {status, result} = await instance.$dispatch(instance.$connectionId, name, action, payload);
+                        if (status === "ok") {
+                            //apply mutations on actual store
+                            for (const commit of result.mutations) {
+                                instance.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
+                            }
+                            return result.actionResult;
+                        } else {
+                            instance.error({statusCode: 500, message: "Internal server error"});
                         }
-                        return result.actionResult;
                     }
                 }
             };

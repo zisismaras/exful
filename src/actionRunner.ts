@@ -1,6 +1,7 @@
 import {Request, Response} from "express";
 import {getState, updateState} from "./stateTree";
 import {Mod} from "./actionServer";
+import {AbstractActionContext} from "./vuex";
 
 export async function createActionContext(params: {
     connectionId: string,
@@ -9,7 +10,11 @@ export async function createActionContext(params: {
     req: Request,
     res: Response,
     isSSR: boolean
-}) {
+}): Promise<{
+    actionContext: AbstractActionContext,
+    commitTracker: {moduleName: string, mutation: string, payload: unknown}[],
+    currentStates: {[key: string]: Record<string, unknown>}
+}> {
     const currentStates: {[key: string]: Record<string, unknown>} = {};
     const myModule = params.moduleTree[params.moduleName];
     const state = await getState(
@@ -20,7 +25,7 @@ export async function createActionContext(params: {
     currentStates[params.moduleName] = state;
     const actualGetters = myModule.getters ? createGetters(myModule.getters, state) : {};
     const commitTracker: {moduleName: string, mutation: string, payload: unknown}[] = [];
-    const actionContext = {
+    const actionContext: AbstractActionContext = {
         state,
         getters: actualGetters,
         req: params.req,
@@ -117,4 +122,124 @@ function createGetters(
         });
     }
     return actualGetters;
+}
+
+export async function runAction(params: {
+    moduleName: string,
+    moduleTree: {[key: string]: Mod},
+    commitTracker: {moduleName: string, mutation: string, payload: unknown}[],
+    actionName: string,
+    actionContext: AbstractActionContext,
+    actionPayload: unknown,
+    isSSR: boolean
+}) {
+    const mod = params.moduleTree[params.moduleName];
+    let actionError: Error | null = null;
+    try {
+        if (!mod.actions || !mod.actions[params.actionName]) {
+            throw new Error(`Unknown action ${params.moduleName}/${params.actionName}`);
+        }
+        //run before:all
+        if (mod.hooks && mod.hooks["before:all"]) {
+            await mod.hooks["before:all"]({
+                req: params.actionContext.req,
+                res: params.actionContext.res,
+                isSSR: params.isSSR,
+                metadata: {
+                    moduleName: params.moduleName,
+                    actionName: params.actionName,
+                    hookName: "before:all"
+                }
+            });
+        }
+        //run before:{action}
+        if (mod.hooks && mod.hooks[`before:${params.actionName}`]) {
+            await mod.hooks[`before:${params.actionName}`]({
+                req: params.actionContext.req,
+                res: params.actionContext.res,
+                isSSR: params.isSSR,
+                metadata: {
+                    moduleName: params.moduleName,
+                    actionName: params.actionName,
+                    hookName: `before:${params.actionName}`
+                }
+            });
+        }
+        //run the action
+        const actionResult = await mod.actions[params.actionName](params.actionContext, params.actionPayload);
+        //run after:{action}
+        if (mod.hooks && mod.hooks[`after:${params.actionName}`]) {
+            await mod.hooks[`after:${params.actionName}`]({
+                req: params.actionContext.req,
+                res: params.actionContext.res,
+                isSSR: params.isSSR,
+                metadata: {
+                    moduleName: params.moduleName,
+                    actionName: params.actionName,
+                    hookName: `after:${params.actionName}`
+                },
+                actionResult,
+                mutations: params.commitTracker
+            });
+        }
+        //run after:all
+        if (mod.hooks && mod.hooks["after:all"]) {
+            await mod.hooks["after:all"]({
+                req: params.actionContext.req,
+                res: params.actionContext.res,
+                isSSR: params.isSSR,
+                metadata: {
+                    moduleName: params.moduleName,
+                    actionName: params.actionName,
+                    hookName: "after:all"
+                },
+                actionResult,
+                mutations: params.commitTracker
+            });
+        }
+        
+        return actionResult as unknown;
+    } catch (e) {
+        actionError = e;
+        try {
+            //run error:{action}
+            if (mod.hooks && mod.hooks[`error:${params.actionName}`]) {
+                await mod.hooks[`error:${params.actionName}`]({
+                    req: params.actionContext.req,
+                    res: params.actionContext.res,
+                    isSSR: params.isSSR,
+                    metadata: {
+                        moduleName: params.moduleName,
+                        actionName: params.actionName,
+                        hookName: `error:${params.actionName}`
+                    },
+                    error: e
+                });
+            }
+            //run error:all
+            if (mod.hooks && mod.hooks["error:all"]) {
+                await mod.hooks["error:all"]({
+                    req: params.actionContext.req,
+                    res: params.actionContext.res,
+                    isSSR: params.isSSR,
+                    metadata: {
+                        moduleName: params.moduleName,
+                        actionName: params.actionName,
+                        hookName: "error:all"
+                    },
+                    error: e
+                });
+            }
+        } catch (ee) {
+            //TODO log.error that the error hooks also threw an error
+            //just log this one and only re-throw the actual action error
+        }
+    }
+    //re-throw the action error
+    if (actionError) {
+        const wrappedError = new Error(actionError.message);
+        wrappedError.name = actionError.name;
+        wrappedError.stack = actionError.stack;
+        throw wrappedError;
+    }
 }

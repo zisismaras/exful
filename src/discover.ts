@@ -41,7 +41,8 @@ export function getDiscover(relativeStoreDir: string, nuxtRootStoreDir: string) 
                 state: `${mod.directory}/state.ts`,
                 mutations: `${mod.directory}/mutations.ts`,
                 getters: `${mod.directory}/getters.ts`,
-                actions: `${mod.directory}/actions.ts`
+                actions: `${mod.directory}/actions.ts`,
+                hooks: `${mod.directory}/hooks.ts`
             };
         }).map(function(mod) {
             if (!existsSync(mod.state) || !statSync(mod.state).isFile() || !importFresh<any>(mod.state).default) {
@@ -60,6 +61,10 @@ export function getDiscover(relativeStoreDir: string, nuxtRootStoreDir: string) 
                 //@ts-ignore
                 delete mod.actions;
             }
+            if (!existsSync(mod.hooks) || !statSync(mod.hooks).isFile() || !importFresh<any>(mod.hooks).default) {
+                //@ts-ignore
+                delete mod.hooks;
+            }
             return mod;
         }).map(function(mod) {
             mod.root = mod.root.replace(nuxtRootStoreDir, relativeStoreDir);
@@ -74,6 +79,9 @@ export function getDiscover(relativeStoreDir: string, nuxtRootStoreDir: string) 
             }
             if (mod.actions) {
                 mod.actions = mod.actions.replace(nuxtRootStoreDir, relativeStoreDir);
+            }
+            if (mod.hooks) {
+                mod.hooks = mod.hooks.replace(nuxtRootStoreDir, relativeStoreDir);
             }
             return mod;
         });
