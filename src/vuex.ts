@@ -1,4 +1,4 @@
-import {IncomingMessage, OutgoingMessage} from "http";
+import {Request, Response} from "express";
 
 type ActionConstraint = {[key: string]: (payload: any) => unknown};
 type MutationConstraint = {[key: string]: (payload: any) => void};
@@ -37,8 +37,8 @@ type ActionContext<State, Getters, Mutations, Actions> = {
     commit: Mutations extends MutationConstraint ? Commit<Mutations> : never,
     dispatch: Actions extends ActionConstraint ? Dispatch<Actions> : never,
     loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
-    req: IncomingMessage,
-    res: OutgoingMessage,
+    req: Request,
+    res: Response,
     isSSR: boolean
 }
 
@@ -84,6 +84,68 @@ type ActionCreator<Schema extends SchemaConstraint> = {
     ): void
 }
 
+type UnPromisify<T> = T extends Promise<infer U> ? U : T;
+type HookContextMetaData = {
+    moduleName: string,
+    actionName: string,
+    hookName: string
+};
+type HooksCreator<Schema extends SchemaConstraint> = {
+    (
+        hooks: Schema["actions"] extends ActionConstraint ? Partial<{
+            [key in keyof Schema["actions"] & string as `before:${key}` | "before:all"]: (
+                hookContext: {
+                    req: Request,
+                    res: Response,
+                    isSSR: boolean,
+                    metadata: HookContextMetaData
+                }
+            ) => void
+        } & {
+            [key in keyof Schema["actions"] & string as `after:${key}`]: (
+                hookContext: {
+                    req: Request,
+                    res: Response,
+                    isSSR: boolean,
+                    metadata: HookContextMetaData,
+                    actionResult: UnPromisify<ReturnType<Schema["actions"][key]>>,
+                    mutations: {
+                        moduleName: string;
+                        mutation: string;
+                        payload: unknown;
+                    }[]
+                }
+            ) => void
+        } & {
+            //same as after:{key} but with an `unknown` actionResult
+            [key in keyof Schema["actions"] & string as "after:all"]: (
+                hookContext: {
+                    req: Request,
+                    res: Response,
+                    isSSR: boolean,
+                    metadata: HookContextMetaData
+                    actionResult: unknown,
+                    mutations: {
+                        moduleName: string;
+                        mutation: string;
+                        payload: unknown;
+                    }[]
+                }
+            ) => void
+        } & {
+            [key in keyof Schema["actions"] & string as `error:${key}` | "error:all"]: (
+                hookContext: {
+                    req: Request,
+                    res: Response,
+                    isSSR: boolean,
+                    metadata: HookContextMetaData
+                    error: Error
+                }
+            ) => void
+        }> : never
+    ): void
+}
+
 type Accessor<Schema extends SchemaConstraint> = {
     state: Optional<Schema["state"], StateConstraint>,
     getters: Schema["getters"] extends GetterConstraint ?
@@ -99,6 +161,7 @@ export function Module<Schema extends SchemaConstraint>(
     Getters: GetterCreator<Schema>,
     Mutations: MutationCreator<Schema>,
     Actions: ActionCreator<Schema>,
+    Hooks: HooksCreator<Schema>,
     accessor: () => Accessor<Schema>
 } {
     return {
@@ -106,6 +169,7 @@ export function Module<Schema extends SchemaConstraint>(
         Getters: function(g) { return g; },
         Mutations: function(m) { return m; },
         Actions: function(a) { return a; },
+        Hooks: function(h) {return h; },
         //@ts-ignore
         accessor: function(instance) {
             //transform the vuex getters

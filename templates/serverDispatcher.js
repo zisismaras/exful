@@ -1,3 +1,5 @@
+import ExpressRequest from "~express/request";
+import ExpressResponse from "~express/response";
 import {createActionContext, applyMutations} from "~exful/actionRunner";
 
 <%(function() {
@@ -65,5 +67,12 @@ function getDispatch(req, res) {
  * @type {import('@nuxt/types').Plugin}
  */
 export default function(context, inject) {
+    <% if (options.enableSSRExpressReqRes === true) { %>
+        context.req.res = context.res;
+        context.res.req = context.req;
+        context.res.locals = Object.create(null);
+        Reflect.setPrototypeOf(context.req, ExpressRequest);
+        Reflect.setPrototypeOf(context.res, ExpressResponse);
+    <% } %>
     inject("dispatch", getDispatch(context.req, context.res));
 }
