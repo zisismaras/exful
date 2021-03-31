@@ -2,11 +2,11 @@
   "name": "exful",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/vuex.js",
-  "types": "dist/vuex.d.ts",
+  "main": "dist/exful.js",
+  "types": "dist/exful.d.ts",
   "exports": {
-    ".": "./dist/vuex.js",
-    "./module": "./dist/index.js"
+    ".": "./dist/exful.js",
+    "./nuxt": "./dist/nuxt.js"
   },
   "files": [
     "dist",
