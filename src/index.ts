@@ -10,6 +10,7 @@ const exful: Module = function(_moduleOptions: unknown) {
     }
 
     this.nuxt.options.alias["~exful"] = __dirname;
+    this.nuxt.options.alias["~express"] = join(__dirname, "..", "node_modules", "express", "lib");
 
     this.addPlugin({
         src: join(__dirname, "createConnection.js"),
@@ -40,7 +41,8 @@ const exful: Module = function(_moduleOptions: unknown) {
         fileName: "./exful/serverDispatcher.js",
         mode: "server",
         options: {
-            discover: getDiscover("../../store", nuxtRootStoreDir)
+            discover: getDiscover("../../store", nuxtRootStoreDir),
+            enableSSRExpressReqRes: true //TODO from moduleOptions
         }
     });
 

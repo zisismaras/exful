@@ -1,6 +1,6 @@
 import {readdirSync, existsSync, statSync} from "fs";
 import Express from "express";
-import {createActionContext, applyMutations} from "./actionRunner";
+import {startDispatchChain} from "./actionRunner";
 import {renewConnection} from "./stateTree";
 
 //on development don't cache required store modules
@@ -9,7 +9,7 @@ if (process.env.NODE_ENV !== "production") {
     storeRequire = require("import-fresh");
 }
 
-//@ts-ignore
+//@ts-ignore check comment in index.ts about the global
 const storeDir: string = global.__nuxtRootStoreDir;
 if (!existsSync(storeDir) || !statSync(storeDir).isDirectory()) {
     throw new Error("No store directory");
@@ -28,6 +28,7 @@ export type Mod = Partial<{
     actions: {[key: string]: Function},
     mutations: {[key: string]: Function},
     getters: {[key: string]: Function},
+    hooks: {[key: string]: Function},
     accessor: unknown
 }>;
 
@@ -63,6 +64,12 @@ for (const {name, directory} of moduleDirs) {
             mod.getters = getters;
         }
     } catch (_e) {}
+    try {
+        const hooks = storeRequire(`${directory}/hooks`).default;
+        if (hooks) {
+            mod.hooks = hooks;
+        }
+    } catch (_e) {}
     if (Object.keys(mod).length > 0) {
         moduleTree[name] = mod;
     }
@@ -74,34 +81,47 @@ app.use(Express.json());
 
 const moduleNames = Object.keys(moduleTree);
 app.put("/ping/:connectionId", async function(req, res) {
-    await renewConnection(req.params.connectionId, moduleNames);
-    res.setHeader("Cache-Control", "no-cache");
-    res.send("pong");
+    try {
+        await renewConnection(req.params.connectionId, moduleNames);
+        res.setHeader("Cache-Control", "no-cache");
+        res.send("pong");
+    } catch (e) {
+        //TODO log.error
+    }
 });
 
 for (const [moduleName, mod] of Object.entries(moduleTree)) {
     if (!mod.actions) continue;
-    for (const [actionName, actionFn] of Object.entries(mod.actions)) {
+    for (const actionName of Object.keys(mod.actions)) {
         app.post(`/${moduleName}/${actionName}`, async function(req, res) {
-            const {actionContext, commitTracker, currentStates} = await createActionContext({
-                connectionId: req.body.connectionId,
-                moduleName,
-                moduleTree,
-                req,
-                res,
-                isSSR: false
-            });
-            const actionResult = await actionFn(actionContext, req.body.payload);
-            await applyMutations({
-                connectionId: req.body.connectionId,
-                moduleTree,
-                commitTracker,
-                currentStates
-            });
-            res.json({
-                actionResult,
-                mutations: commitTracker
-            });
+            try {
+                const {initialModule, applyMutations} = await startDispatchChain({
+                    connectionId: req.body.connectionId,
+                    initialModuleName: moduleName,
+                    moduleTree,
+                    req,
+                    res,
+                    isSSR: false
+                });
+                const actionResult = await initialModule.dispatch(actionName, req.body.payload);
+                const mutations = await applyMutations();
+                if (!res.headersSent) {
+                    //TODO log.error if headersSent "dont't modify store response"
+                    res.json({
+                        actionResult,
+                        mutations
+                    });
+                }
+            } catch (e) {
+                //TODO log.error the error
+                console.error(e);
+                //return default error response
+                if (!res.headersSent) {
+                    res.status(500).json({
+                        message: "Internal server error"
+                    });
+                }
+            }
         });
     }
 }
