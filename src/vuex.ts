@@ -154,6 +154,11 @@ type Accessor<Schema extends SchemaConstraint> = {
     dispatch: Schema["actions"] extends ActionConstraint ?
         Dispatch<Schema["actions"]> : never
 }
+export type AbstractLoadedModule = Accessor<{
+    state: StateConstraint,
+    getters: GetterConstraint,
+    actions: ActionConstraint
+}>;
 
 export function Module<Schema extends SchemaConstraint>(
     name: string

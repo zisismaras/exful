@@ -1,6 +1,6 @@
 import {readdirSync, existsSync, statSync} from "fs";
 import Express from "express";
-import {createActionContext, applyMutations, runAction} from "./actionRunner";
+import {startDispatchChain} from "./actionRunner";
 import {renewConnection} from "./stateTree";
 
 //on development don't cache required store modules
@@ -95,34 +95,21 @@ for (const [moduleName, mod] of Object.entries(moduleTree)) {
     for (const actionName of Object.keys(mod.actions)) {
         app.post(`/${moduleName}/${actionName}`, async function(req, res) {
             try {
-                const {actionContext, commitTracker, currentStates} = await createActionContext({
+                const {initialModule, applyMutations} = await startDispatchChain({
                     connectionId: req.body.connectionId,
-                    moduleName,
+                    initialModuleName: moduleName,
                     moduleTree,
                     req,
                     res,
                     isSSR: false
                 });
-                const actionResult = await runAction({
-                    moduleName,
-                    moduleTree,
-                    commitTracker,
-                    actionName,
-                    actionContext,
-                    actionPayload: req.body.payload,
-                    isSSR: false
-                });
-                await applyMutations({
-                    connectionId: req.body.connectionId,
-                    moduleTree,
-                    commitTracker,
-                    currentStates
-                });
+                const actionResult = await initialModule.dispatch(actionName, req.body.payload);
+                const mutations = await applyMutations();
                 if (!res.headersSent) {
                     //TODO log.error if headersSent "dont't modify store response"
                     res.json({
                         actionResult,
-                        mutations: commitTracker
+                        mutations
                     });
                 }
             } catch (e) {

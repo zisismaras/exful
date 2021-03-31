@@ -1,6 +1,6 @@
 import ExpressRequest from "~express/request";
 import ExpressResponse from "~express/response";
-import {createActionContext, applyMutations, runAction} from "~exful/actionRunner";
+import {startDispatchChain} from "~exful/actionRunner";
 
 <%(function() {
     options.modules = options.discover();
@@ -47,38 +47,27 @@ const moduleTree = {
 function getDispatch(req, res) {
     return async function dispatch(connectionId, moduleName, actionName, payload) {
         try {
-            const {actionContext, commitTracker, currentStates} = await createActionContext({
+            const {initialModule, applyMutations} = await startDispatchChain({
                 connectionId,
-                moduleName,
+                initialModuleName: moduleName,
                 moduleTree,
                 req,
                 res,
                 isSSR: true
             });
-            const actionResult = await runAction({
-                moduleName,
-                moduleTree,
-                commitTracker,
-                actionName,
-                actionContext,
-                actionPayload: payload,
-                isSSR: true
-            });
-            await applyMutations({
-                connectionId,
-                moduleTree,
-                commitTracker,
-                currentStates
-            });
+            const actionResult = await initialModule.dispatch(actionName, payload);
+            const mutations = await applyMutations();
     
             return {
                 status: "ok",
                 result: {
                     actionResult,
-                    mutations: commitTracker
+                    mutations
                 }
             };
-        } catch (_e) {
+        } catch (e) {
+            //TODO log.error the error
+            console.error(e);
             return {
                 status: "error"
             }
