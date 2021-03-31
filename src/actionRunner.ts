@@ -103,7 +103,8 @@ async function runAction(params: {
                     moduleName: params.moduleName,
                     actionName: params.actionName,
                     hookName: "before:all"
-                }
+                },
+                loadModule: params.actionContext.loadModule
             });
         }
         //run before:{action}
@@ -116,7 +117,8 @@ async function runAction(params: {
                     moduleName: params.moduleName,
                     actionName: params.actionName,
                     hookName: `before:${params.actionName}`
-                }
+                },
+                loadModule: params.actionContext.loadModule
             });
         }
         //run the action
@@ -135,6 +137,7 @@ async function runAction(params: {
                     actionName: params.actionName,
                     hookName: `after:${params.actionName}`
                 },
+                loadModule: params.actionContext.loadModule,
                 actionResult,
                 mutations: params.commitTracker
             });
@@ -150,6 +153,7 @@ async function runAction(params: {
                     actionName: params.actionName,
                     hookName: "after:all"
                 },
+                loadModule: params.actionContext.loadModule,
                 actionResult,
                 mutations: params.commitTracker
             });
@@ -170,6 +174,7 @@ async function runAction(params: {
                         actionName: params.actionName,
                         hookName: `error:${params.actionName}`
                     },
+                    loadModule: params.actionContext.loadModule,
                     error: e
                 });
             }
@@ -184,6 +189,7 @@ async function runAction(params: {
                         actionName: params.actionName,
                         hookName: "error:all"
                     },
+                    loadModule: params.actionContext.loadModule,
                     error: e
                 });
             }
