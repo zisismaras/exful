@@ -1,7 +1,7 @@
 import {Request, Response} from "express";
 import {getState, updateState} from "./stateTree";
 import {Mod} from "./actionServer";
-import {AbstractActionContext, AbstractLoadedModule} from "./exful";
+import {AbstractActionContext, AbstractLoadedModule} from "./types/internal";
 
 type CommitTracker = {moduleName: string, mutation: string, payload: unknown}[];
 type CurrentStates = {[key: string]: Record<string, unknown>};
