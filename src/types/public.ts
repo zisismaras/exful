@@ -4,6 +4,13 @@ import {Request, Response} from "express";
 type UnPromisify<T> = T extends Promise<infer U> ? U : T;
 type Optional<T, Constraint> = T extends Constraint ? T : never;
 
+//workaround to make mutation and action payloads optional when they are undefined
+//https://github.com/Microsoft/TypeScript/issues/12400#issuecomment-428599865
+type OptionalSpread<T = undefined> =
+    T extends undefined
+    ? []
+    : [T];
+
 //constraints
 export type ActionConstraint = {[key: string]: (payload: any) => unknown};
 export type MutationConstraint = {[key: string]: (payload: any) => void};
@@ -19,14 +26,14 @@ export type SchemaConstraint = Partial<{
 type Dispatch<Actions extends ActionConstraint> = {
     <key extends keyof Actions & string>(
         action: key,
-        payload: Parameters<Actions[key]>[0]
+        ...payload: OptionalSpread<Parameters<Actions[key]>[0]>
     ): ReturnType<Actions[key]> extends Promise<any> ? ReturnType<Actions[key]> : Promise<ReturnType<Actions[key]>>
 };
 
 type Commit<Mutations extends MutationConstraint> = {
     <key extends keyof Mutations & string>(
-        action: key,
-        payload: Parameters<Mutations[key]>[0]
+        mutation: key,
+        ...payload: OptionalSpread<Parameters<Mutations[key]>[0]>
     ): ReturnType<Mutations[key]>
 };
 
