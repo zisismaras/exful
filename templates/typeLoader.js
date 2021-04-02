@@ -3,7 +3,7 @@
 */
 
 <%(function() {
-    options.modules = options.discover();
+    options.modules = options.discover("paths");
 })()%>
 <% for (const mod of options.modules) { %>
 import {accessor as <%= mod.name %>} from "<%= mod.root %>";

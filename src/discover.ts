@@ -1,91 +1,115 @@
 import {readdirSync, existsSync, statSync} from "fs";
-import importFresh from "import-fresh";
 
-/*
-    We do all the loading and checking based on the absolute `nuxtRootStoreDir`
-    but at the end we replace the absolute dir with a relative one so
-    the generated templates won't have absolute paths in their imports.
+//on development don't cache required store modules
+let requirePart = require;
+if (process.env.NODE_ENV !== "production") {
+    requirePart = require("import-fresh");
+}
 
-    This probably doesn't matter since webpack will just load and bundle the file in either way.
-*/
+const VALID_KINDS = ["state", "getters", "mutations", "actions", "hooks"];
+const VALID_NAME = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/;
 
-export function getDiscover(relativeStoreDir: string, nuxtRootStoreDir: string) {
-    return function discover() {
+export function getDiscover(nuxtRootStoreDir: string, relativeStoreDir?: string) {
+    return function discover(result: "paths" | "loaded") {
         if (!existsSync(nuxtRootStoreDir) || !statSync(nuxtRootStoreDir).isDirectory()) {
-            // throw new Error("No store directory");
-            return [];
+            if (result === "loaded") {
+                return {};
+            } else {
+                return [];
+            }
         }
         const modules = readdirSync(nuxtRootStoreDir).filter(function(dir) {
             if (!statSync(`${nuxtRootStoreDir}/${dir}`).isDirectory()) {
                 return false;
             }
-            //TODO check for .ts and .js files (bellow as well)
-            const moduleIndex = `${nuxtRootStoreDir}/${dir}/index.ts`;
-            if (!existsSync(moduleIndex) || !statSync(moduleIndex).isFile()) {
-                return false;
-            }
-            if (!importFresh<any>(moduleIndex).accessor) {
-                return false;
-            }
             return true;
         }).map(function(dir) {
             return {
-                //TODO we should normalize the name, it must not contain - or symbols (we use them as a variable in the templates)
                 name: dir,
-                directory: `${nuxtRootStoreDir}/${dir}`
+                directory: dir,
+                absoluteDirectory: `${nuxtRootStoreDir}/${dir}`
             };
-        }).map(function(mod) {
-            return {
-                name: mod.name,
-                root: mod.directory,
-                state: `${mod.directory}/state.ts`,
-                mutations: `${mod.directory}/mutations.ts`,
-                getters: `${mod.directory}/getters.ts`,
-                actions: `${mod.directory}/actions.ts`,
-                hooks: `${mod.directory}/hooks.ts`
-            };
-        }).map(function(mod) {
-            if (!existsSync(mod.state) || !statSync(mod.state).isFile() || !importFresh<any>(mod.state).default) {
-                //@ts-ignore
-                delete mod.state;
-            }
-            if (!existsSync(mod.mutations) || !statSync(mod.mutations).isFile() || !importFresh<any>(mod.mutations).default) {
-                //@ts-ignore
-                delete mod.mutations;
-            }
-            if (!existsSync(mod.getters) || !statSync(mod.getters).isFile() || !importFresh<any>(mod.getters).default) {
-                //@ts-ignore
-                delete mod.getters;
-            }
-            if (!existsSync(mod.actions) || !statSync(mod.actions).isFile() || !importFresh<any>(mod.actions).default) {
-                //@ts-ignore
-                delete mod.actions;
-            }
-            if (!existsSync(mod.hooks) || !statSync(mod.hooks).isFile() || !importFresh<any>(mod.hooks).default) {
-                //@ts-ignore
-                delete mod.hooks;
-            }
-            return mod;
-        }).map(function(mod) {
-            mod.root = mod.root.replace(nuxtRootStoreDir, relativeStoreDir);
-            if (mod.state) {
-                mod.state = mod.state.replace(nuxtRootStoreDir, relativeStoreDir);
-            }
-            if (mod.mutations) {
-                mod.mutations = mod.mutations.replace(nuxtRootStoreDir, relativeStoreDir);
-            }
-            if (mod.getters) {
-                mod.getters = mod.getters.replace(nuxtRootStoreDir, relativeStoreDir);
-            }
-            if (mod.actions) {
-                mod.actions = mod.actions.replace(nuxtRootStoreDir, relativeStoreDir);
-            }
-            if (mod.hooks) {
-                mod.hooks = mod.hooks.replace(nuxtRootStoreDir, relativeStoreDir);
-            }
-            return mod;
         });
-    
-        return modules;
+        for (const mod of Object.values(modules)) {
+            if (!VALID_NAME.test(mod.name)) {
+                throw new Error(`Module name (${mod.name}) is not a valid javascript variable name`);
+            }
+        }
+
+        const moduleMap: {
+            [moduleName: string]: {
+                [kind: string]: {
+                    path: string,
+                    loaded: any
+                }
+            }
+        } = {};
+        for (const mod of modules) {
+            moduleMap[mod.name] = {};
+            const parts = readdirSync(mod.absoluteDirectory).filter(function(p) {
+                return p.endsWith(".js") || p.endsWith(".ts");
+            });
+            for (const part of parts) {
+                const partPath = `${nuxtRootStoreDir}/${mod.directory}/${part}`;
+                const loaded = requirePart(partPath);
+                if (loaded?.accessor?.__meta__?.kind === "accessor") {
+                    if (mod.name !== loaded.accessor.__meta__.moduleName) {
+                        throw new Error(`Module name (${loaded.accessor.__meta__.moduleName}) does not match the directory name (${mod.name})`);
+                    }
+                    moduleMap[mod.name].root = {
+                        path: partPath.replace(/\.js|\.ts$/, ""),
+                        loaded: loaded.accessor
+                    };
+                } else if (loaded?.default?.__meta__?.kind && VALID_KINDS.includes(loaded.default.__meta__.kind)) {
+                    moduleMap[mod.name][loaded.default.__meta__.kind] = {
+                        path: partPath.replace(/\.js|\.ts$/, ""),
+                        loaded: loaded.default
+                    };
+                } else {
+                    continue;
+                }
+            }
+        }
+
+        /*
+            We do all the loading and checking based on the absolute `nuxtRootStoreDir`
+            but at the end we replace the absolute dir with a relative one so
+            the generated templates won't have absolute paths in their imports.
+            This probably doesn't matter since webpack will just load and bundle the file in either way.
+        */
+        if (relativeStoreDir) {
+            for (const mod of Object.values(moduleMap)) {
+                for (const kind of Object.values(mod)) {
+                    kind.path = kind.path.replace(nuxtRootStoreDir, relativeStoreDir);
+                }
+            }
+        }
+
+        /*
+            discover() will be called from plugin templates and the actionServer.
+            The plugins need only the paths so they can form the imports themselves.
+            The actionServer needs the loaded modules to run them.
+            We return a different data format in each case to better fit the caller.
+        */
+        if (result === "loaded") {
+            const loadedMap: {[key: string]: {[key: string]: Function}} = {};
+            for (const [moduleName, mod] of Object.entries(moduleMap)) {
+                loadedMap[moduleName] = {};
+                for (const [kindName, kind] of Object.entries(mod)) {
+                    loadedMap[moduleName][kindName] = kind.loaded; 
+                }
+            }
+            return loadedMap;
+        } else {
+            const pathMap = [];
+            for (const [moduleName, mod] of Object.entries(moduleMap)) {
+                const current: {[key: string]: string} = {name: moduleName};
+                for (const [kindName, kind] of Object.entries(mod)) {
+                    current[kindName] = kind.path; 
+                }
+                pathMap.push(current);
+            }
+            return pathMap;
+        }
     };
 }

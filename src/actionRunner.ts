@@ -220,12 +220,17 @@ function getLoadModule(params: {
             throw new Error(`Unknown module ${moduleName}`);
         }
         const mod = params.moduleTree[moduleName];
-        const moduleState = await getState(
-            params.connectionId,
-            moduleName,
-            mod.state || function noState() { return {}; }
-        );
-        params.currentStates[moduleName] = moduleState;
+        let moduleState;
+        if (params.currentStates[moduleName]) {
+            moduleState = params.currentStates[moduleName];
+        } else {
+            moduleState = await getState(
+                params.connectionId,
+                moduleName,
+                mod.state || function noState() { return {}; }
+            );
+            params.currentStates[moduleName] = moduleState;
+        }
         const actualGetters = mod.getters
             ? createGetters(mod.getters, moduleState)
             : {};

@@ -31,7 +31,7 @@ const exful: Module = function(_moduleOptions: unknown) {
         src: moduleLoaderPath,
         fileName: "./exful/modules.js",
         options: {
-            discover: getDiscover("../../store", nuxtRootStoreDir)
+            discover: getDiscover(nuxtRootStoreDir, "../../store")
         }
     });
 
@@ -41,7 +41,7 @@ const exful: Module = function(_moduleOptions: unknown) {
         fileName: "./exful/serverDispatcher.js",
         mode: "server",
         options: {
-            discover: getDiscover("../../store", nuxtRootStoreDir),
+            discover: getDiscover(nuxtRootStoreDir, "../../store"),
             enableSSRExpressReqRes: true //TODO from moduleOptions
         }
     });
@@ -65,7 +65,7 @@ const exful: Module = function(_moduleOptions: unknown) {
         src: typeLoaderPath,
         fileName: "../storeTypes.ts",
         options: {
-            discover: getDiscover("./store", nuxtRootStoreDir)
+            discover: getDiscover(nuxtRootStoreDir, "./store")
         }
     });
 

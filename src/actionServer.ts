@@ -1,79 +1,22 @@
-import {readdirSync, existsSync, statSync} from "fs";
 import Express from "express";
+import {getDiscover} from "./discover";
 import {startDispatchChain} from "./actionRunner";
 import {renewConnection} from "./stateTree";
-
-//on development don't cache required store modules
-let storeRequire = require;
-if (process.env.NODE_ENV !== "production") {
-    storeRequire = require("import-fresh");
-}
-
-//@ts-ignore check comment in index.ts about the global
-const storeDir: string = global.__nuxtRootStoreDir;
-if (!existsSync(storeDir) || !statSync(storeDir).isDirectory()) {
-    throw new Error("No store directory");
-}
-const moduleDirs = readdirSync(storeDir).filter(function(dir) {
-    return statSync(`${storeDir}/${dir}`).isDirectory();
-}).map(function(dir) {
-    return {
-        name: dir,
-        directory: `${storeDir}/${dir}`
-    };
-});
 
 export type Mod = Partial<{
     state: () => Record<string, unknown>,
     actions: {[key: string]: Function},
     mutations: {[key: string]: Function},
     getters: {[key: string]: Function},
-    hooks: {[key: string]: Function},
-    accessor: unknown
+    hooks: {[key: string]: Function}
 }>;
 
-const moduleTree: {
+//@ts-ignore check comment in index.ts about the global
+const storeDir: string = global.__nuxtRootStoreDir;
+const discover = getDiscover(storeDir);
+const moduleTree = discover("loaded") as {
     [key: string]: Mod
-} = {};
-
-for (const {name, directory} of moduleDirs) {
-    //TODO more checks here, now the functions just return the input as is
-    //they should at least include a "type" field "actions", "state" etc
-    const mod: Mod = {};
-    try {
-        const state = storeRequire(`${directory}/state`).default;
-        if (state) {
-            mod.state = state;
-        }
-    } catch (_e) {}
-    try {
-        const actions = storeRequire(`${directory}/actions`).default;
-        if (actions) {
-            mod.actions = actions;
-        }
-    } catch (_e) {}
-    try {
-        const mutations = storeRequire(`${directory}/mutations`).default;
-        if (mutations) {
-            mod.mutations = mutations;
-        }
-    } catch (_e) {}
-    try {
-        const getters = storeRequire(`${directory}/getters`).default;
-        if (getters) {
-            mod.getters = getters;
-        }
-    } catch (_e) {}
-    try {
-        const hooks = storeRequire(`${directory}/hooks`).default;
-        if (hooks) {
-            mod.hooks = hooks;
-        }
-    } catch (_e) {}
-    if (Object.keys(mod).length > 0) {
-        moduleTree[name] = mod;
-    }
-}
+};
 
 const app = Express();
 app.disable("x-powered-by");

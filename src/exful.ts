@@ -18,12 +18,27 @@ export function Module<Schema extends SchemaConstraint>(
     Hooks: HooksCreator<Schema>,
     accessor: () => Accessor<Schema>
 } {
-    return {
-        State: function(s) { return s; },
-        Getters: function(g) { return g; },
-        Mutations: function(m) { return m; },
-        Actions: function(a) { return a; },
-        Hooks: function(h) {return h; },
+    const creators: ReturnType<typeof Module> = {
+        State: function(s) {
+            addMeta(s, name, "state");
+            return s; 
+        },
+        Getters: function(g) {
+            addMeta(g, name, "getters");
+            return g;
+        },
+        Mutations: function(m) {
+            addMeta(m, name, "mutations");
+            return m;
+        },
+        Actions: function(a) {
+            addMeta(a, name, "actions");
+            return a;
+        },
+        Hooks: function(h) {
+            addMeta(h, name, "hooks");
+            return h;
+        },
         //@ts-ignore
         accessor: function(instance) {
             //transform the vuex getters
@@ -68,6 +83,7 @@ export function Module<Schema extends SchemaConstraint>(
                     }
                 }
             };
+
             //if you commit mutations from the devtools the state is replaced
             //so the reference we have is now invalid.
             //With a getter we can always point to the current state object
@@ -78,7 +94,24 @@ export function Module<Schema extends SchemaConstraint>(
                     }
                 });
             }
+
             return accessor;
         }
     };
+    addMeta(creators.accessor, name, "accessor");
+
+    return creators;
+}
+
+function addMeta(o: unknown, moduleName: string, kind: string) {
+    if (!o) return;
+    Object.defineProperty(o, "__meta__", {
+        get() {
+            return {
+                moduleName,
+                kind
+            };
+        },
+        enumerable: false
+    });
 }

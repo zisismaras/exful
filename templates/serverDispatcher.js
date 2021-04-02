@@ -3,7 +3,7 @@ import ExpressResponse from "~express/response";
 import {startDispatchChain} from "~exful/actionRunner";
 
 <%(function() {
-    options.modules = options.discover();
+    options.modules = options.discover("paths");
 })()%>
 <% for (const mod of options.modules) { %>
     <% if (mod.actions) { %>

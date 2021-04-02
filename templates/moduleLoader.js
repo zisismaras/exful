@@ -2,7 +2,7 @@ import Vue from "vue";
 import Vuex from "vuex";
 
 <%(function() {
-    options.modules = options.discover();
+    options.modules = options.discover("paths");
 })()%>
 <% for (const mod of options.modules) { %>
     <% if (mod.state) { %>
