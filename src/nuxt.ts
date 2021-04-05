@@ -24,6 +24,12 @@ const exful: Module = function(_moduleOptions: unknown) {
         mode: "client"
     });
 
+    this.addPlugin({
+        src: join(__dirname, "scheduler.js"),
+        fileName: "./exful/scheduler.js",
+        mode: "client"
+    });
+
     const nuxtRootStoreDir = join(this.options.rootDir, "store");
 
     const moduleLoaderPath = join(__dirname, "..", "templates", "moduleLoader.js");

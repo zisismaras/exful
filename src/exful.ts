@@ -59,15 +59,17 @@ export function Module<Schema extends SchemaConstraint>(
                 dispatch: async function(action: string, payload: unknown) {
                     if (process.client) {
                         //api call
-                        const result = await instance.$axios.post(`/store/${name}/${action}`, {
-                            connectionId: instance.nuxtState.$connectionId,
-                            payload: payload
+                        return instance.$schedule(async function() {
+                            const result = await instance.$axios.post(`/store/${name}/${action}`, {
+                                connectionId: instance.nuxtState.$connectionId,
+                                payload: payload
+                            });
+                            //apply mutations on actual store
+                            for (const commit of result.data.mutations) {
+                                instance.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
+                            }
+                            return result.data.actionResult;
                         });
-                        //apply mutations on actual store
-                        for (const commit of result.data.mutations) {
-                            instance.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
-                        }
-                        return result.data.actionResult;
                     } else {
                         //serverDispatcher
                         const {status, result} = await instance.$dispatch(instance.$connectionId, name, action, payload);
