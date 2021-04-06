@@ -6,6 +6,7 @@ let timer: unknown = null;
 const ping: Plugin = function(context) {
     if (timer) return;
     timer = setInterval(async function() {
+        //@ts-ignore no axios type
         await context.$axios.put(`/store/ping/${context.nuxtState.$connectionId}`);
     }, PING_INTERVAL);
 };
