@@ -1,15 +1,5 @@
 import {Request, Response} from "express";
-
-//utility
-type UnPromisify<T> = T extends Promise<infer U> ? U : T;
-type Optional<T, Constraint> = T extends Constraint ? T : never;
-
-//workaround to make mutation and action payloads optional when they are undefined
-//https://github.com/Microsoft/TypeScript/issues/12400#issuecomment-428599865
-type OptionalSpread<T = undefined> =
-    T extends undefined
-    ? []
-    : [T];
+import {Defined, UnPromisify, OptionalSpread} from "./utility";
 
 //constraints
 export type ActionConstraint = {[key: string]: (payload: any) => unknown};
@@ -42,7 +32,7 @@ type GettersAsProperties<Getters extends GetterConstraint> = {
 };
 
 export type ActionContext<State, Getters, Mutations, Actions> = {
-    state: Optional<State, StateConstraint>,
+    state: Defined<State, StateConstraint>,
     getters: Getters extends GetterConstraint ? GettersAsProperties<Getters> : never,
     commit: Mutations extends MutationConstraint ? Commit<Mutations> : never,
     dispatch: Actions extends ActionConstraint ? Dispatch<Actions> : never,
@@ -54,16 +44,16 @@ export type ActionContext<State, Getters, Mutations, Actions> = {
 
 //creators
 export type StateCreator<Schema extends SchemaConstraint> = {
-    (stateFn: () => Optional<Schema["state"], StateConstraint>): void
+    (stateFn: () => Defined<Schema["state"], StateConstraint>): void
 }
 
 export type GetterCreator<Schema extends SchemaConstraint> = {
     (
         getters: Schema["getters"] extends GetterConstraint ? {
             [key in keyof Schema["getters"]]: (
-                state: Optional<Schema["state"], StateConstraint>,
+                state: Defined<Schema["state"], StateConstraint>,
                 getters: GettersAsProperties<Schema["getters"]>
-            ) => ReturnType<Optional<Schema["getters"], GetterConstraint>[key]>
+            ) => ReturnType<Defined<Schema["getters"], GetterConstraint>[key]>
         } : never
     ): void
 }
@@ -72,9 +62,9 @@ export type MutationCreator<Schema extends SchemaConstraint> = {
     (
         mutations: Schema["mutations"] extends MutationConstraint ? {
             [key in keyof Schema["mutations"]]: (
-                state: Optional<Schema["state"], StateConstraint>,
-                payload: Parameters<Optional<Schema["mutations"], MutationConstraint>[key]>[0]
-            ) => ReturnType<Optional<Schema["mutations"], MutationConstraint>[key]>
+                state: Defined<Schema["state"], StateConstraint>,
+                payload: Parameters<Defined<Schema["mutations"], MutationConstraint>[key]>[0]
+            ) => ReturnType<Defined<Schema["mutations"], MutationConstraint>[key]>
         } : never
     ): void
 }
@@ -84,13 +74,13 @@ export type ActionCreator<Schema extends SchemaConstraint> = {
         actions: Schema["actions"] extends ActionConstraint ? {
             [key in keyof Schema["actions"]]: (
                 context: ActionContext<
-                    Optional<Schema["state"], StateConstraint>,
-                    Optional<Schema["getters"], GetterConstraint>,
-                    Optional<Schema["mutations"], MutationConstraint>,
-                    Optional<Schema["actions"], ActionConstraint>
+                    Defined<Schema["state"], StateConstraint>,
+                    Defined<Schema["getters"], GetterConstraint>,
+                    Defined<Schema["mutations"], MutationConstraint>,
+                    Defined<Schema["actions"], ActionConstraint>
                 >,
-                payload: Parameters<Optional<Schema["actions"], ActionConstraint>[key]>[0]
-            ) => ReturnType<Optional<Schema["actions"], ActionConstraint>[key]>
+                payload: Parameters<Defined<Schema["actions"], ActionConstraint>[key]>[0]
+            ) => ReturnType<Defined<Schema["actions"], ActionConstraint>[key]>
         } : never
     ): void
 }
@@ -161,7 +151,7 @@ export type HooksCreator<Schema extends SchemaConstraint> = {
 }
 
 export type Accessor<Schema extends SchemaConstraint> = {
-    state: Optional<Schema["state"], StateConstraint>,
+    state: Defined<Schema["state"], StateConstraint>,
     getters: Schema["getters"] extends GetterConstraint ?
         GettersAsProperties<Schema["getters"]> : never,
     dispatch: Schema["actions"] extends ActionConstraint ?
