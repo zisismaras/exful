@@ -16,7 +16,7 @@ export function Module<Schema extends SchemaConstraint>(
     Mutations: MutationCreator<Schema>,
     Actions: ActionCreator<Schema>,
     Hooks: HooksCreator<Schema>,
-    accessor: () => Accessor<Schema>
+    accessor: (context: any) => Accessor<Schema>
 } {
     const creators: ReturnType<typeof Module> = {
         State: function(s) {
@@ -40,47 +40,47 @@ export function Module<Schema extends SchemaConstraint>(
             return h;
         },
         //@ts-ignore
-        accessor: function(instance) {
+        accessor: function(context) {
             //transform the vuex getters
             //myModule/myGetter => myGetter
             const myGetters = {};
-            for (const key of Object.keys(instance.$__store__.getters)) {
+            for (const key of Object.keys(context.$__store__.getters)) {
                 if (key.startsWith(`${name}/`)) {
                     Object.defineProperty(myGetters, key.replace(`${name}/`, ""), {
                         get: function() {
-                            return instance.$__store__.getters[key];
+                            return context.$__store__.getters[key];
                         }
                     });
                 }
             }
             const accessor = {
-                state: instance.$__store__.state[name],
+                state: context.$__store__.state[name],
                 getters: myGetters,
                 dispatch: async function(action: string, payload: unknown) {
                     if (process.client) {
                         //api call
-                        return instance.$schedule(async function() {
-                            const result = await instance.$axios.post(`/store/${name}/${action}`, {
-                                connectionId: instance.nuxtState.$connectionId,
+                        return context.$schedule(async function() {
+                            const result = await context.$axios.post(`/store/${name}/${action}`, {
+                                connectionId: context.nuxtState.$connectionId,
                                 payload: payload
                             });
                             //apply mutations on actual store
                             for (const commit of result.data.mutations) {
-                                instance.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
+                                context.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
                             }
                             return result.data.actionResult;
                         });
                     } else {
                         //serverDispatcher
-                        const {status, result} = await instance.$dispatch(instance.$connectionId, name, action, payload);
+                        const {status, result} = await context.$dispatch(context.$connectionId, name, action, payload);
                         if (status === "ok") {
                             //apply mutations on actual store
                             for (const commit of result.mutations) {
-                                instance.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
+                                context.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
                             }
                             return result.actionResult;
                         } else {
-                            instance.error({statusCode: 500, message: "Internal server error"});
+                            context.error({statusCode: 500, message: "Internal server error"});
                         }
                     }
                 }
@@ -92,7 +92,7 @@ export function Module<Schema extends SchemaConstraint>(
             if (process.client) {
                 Object.defineProperty(accessor, "state", {
                     get: function() {
-                        return instance.$__store__.state[name];
+                        return context.$__store__.state[name];
                     }
                 });
             }
@@ -102,6 +102,7 @@ export function Module<Schema extends SchemaConstraint>(
     };
     addMeta(creators.accessor, name, "accessor");
 
+    //@ts-ignore
     return creators;
 }
 
