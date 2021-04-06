@@ -93,13 +93,26 @@ type HookContextMetaData = {
 export type HooksCreator<Schema extends SchemaConstraint> = {
     (
         hooks: Schema["actions"] extends ActionConstraint ? Partial<{
-            [key in keyof Schema["actions"] & string as `before:${key}` | "before:all"]: (
+            [key in keyof Schema["actions"] & string as `before:${key}`]: (
                 hookContext: {
                     req: Request,
                     res: Response,
                     isSSR: boolean,
                     metadata: HookContextMetaData,
-                    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>
+                    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
+                    actionPayload: Parameters<Schema["actions"][key]>[0]
+                }
+            ) => void
+        } & {
+            //same as before:{key} but with an `unknown` actionPayload
+            [key in keyof Schema["actions"] & string as "before:all"]: (
+                hookContext: {
+                    req: Request,
+                    res: Response,
+                    isSSR: boolean,
+                    metadata: HookContextMetaData,
+                    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
+                    actionPayload: unknown
                 }
             ) => void
         } & {

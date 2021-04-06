@@ -104,7 +104,8 @@ async function runAction(params: {
                     actionName: params.actionName,
                     hookName: "before:all"
                 },
-                loadModule: params.actionContext.loadModule
+                loadModule: params.actionContext.loadModule,
+                actionPayload: params.actionPayload
             });
         }
         //run before:{action}
@@ -118,7 +119,8 @@ async function runAction(params: {
                     actionName: params.actionName,
                     hookName: `before:${params.actionName}`
                 },
-                loadModule: params.actionContext.loadModule
+                loadModule: params.actionContext.loadModule,
+                actionPayload: params.actionPayload
             });
         }
         //run the action
