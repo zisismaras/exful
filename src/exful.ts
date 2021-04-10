@@ -1,3 +1,4 @@
+import {Context} from "@nuxt/types";
 import {
     SchemaConstraint,
     StateCreator,
@@ -16,7 +17,7 @@ export function Module<Schema extends SchemaConstraint>(
     Mutations: MutationCreator<Schema>,
     Actions: ActionCreator<Schema>,
     Hooks: HooksCreator<Schema>,
-    accessor: (context: any) => Accessor<Schema>
+    accessor: (context: Context) => Accessor<Schema>
 } {
     const creators: ReturnType<typeof Module> = {
         State: function(s) {
@@ -72,13 +73,13 @@ export function Module<Schema extends SchemaConstraint>(
                         });
                     } else {
                         //serverDispatcher
-                        const {status, result} = await context.$dispatch(context.$connectionId, name, action, payload);
-                        if (status === "ok") {
+                        const serverDispatched = await context.$dispatch(context.$connectionId, name, action, payload);
+                        if (serverDispatched.status === "ok") {
                             //apply mutations on actual store
-                            for (const commit of result.mutations) {
+                            for (const commit of serverDispatched.result.mutations) {
                                 context.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
                             }
-                            return result.actionResult;
+                            return serverDispatched.result.actionResult;
                         } else {
                             context.error({statusCode: 500, message: "Internal server error"});
                         }
