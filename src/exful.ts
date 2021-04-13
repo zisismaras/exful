@@ -1,4 +1,5 @@
 import {Context} from "@nuxt/types";
+import "@nuxtjs/axios";
 import {
     SchemaConstraint,
     StateCreator,
@@ -40,44 +41,43 @@ export function Module<Schema extends SchemaConstraint>(
             addMeta(h, name, "hooks");
             return h;
         },
-        //@ts-ignore
         accessor: function(context) {
             //transform the vuex getters
             //myModule/myGetter => myGetter
             const myGetters = {};
-            for (const key of Object.keys(context.$__store__.getters)) {
+            for (const key of Object.keys(context.$__exful.vuexStore.getters)) {
                 if (key.startsWith(`${name}/`)) {
                     Object.defineProperty(myGetters, key.replace(`${name}/`, ""), {
                         get: function() {
-                            return context.$__store__.getters[key];
+                            return context.$__exful.vuexStore.getters[key];
                         }
                     });
                 }
             }
             const accessor = {
-                state: context.$__store__.state[name],
+                state: context.$__exful.vuexStore.state[name],
                 getters: myGetters,
                 dispatch: async function(action: string, payload: unknown) {
                     if (process.client) {
                         //api call
-                        return context.$schedule(async function() {
-                            const result = await context.$axios.post(`/store/${name}/${action}`, {
-                                connectionId: context.nuxtState.$connectionId,
+                        return context.$__exful.schedule(async function() {
+                            const result = await context.$axios.post(`/exful/${name}/${action}`, {
+                                connectionId: context.nuxtState.$__exful.connectionId,
                                 payload: payload
                             });
                             //apply mutations on actual store
                             for (const commit of result.data.mutations) {
-                                context.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
+                                context.$__exful.vuexStore.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
                             }
                             return result.data.actionResult;
                         });
                     } else {
                         //serverDispatcher
-                        const serverDispatched = await context.$dispatch(context.$connectionId, name, action, payload);
+                        const serverDispatched = await context.$__exful.dispatch(context.$__exful.connectionId, name, action, payload);
                         if (serverDispatched.status === "ok") {
                             //apply mutations on actual store
                             for (const commit of serverDispatched.result.mutations) {
-                                context.$__store__.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
+                                context.$__exful.vuexStore.commit(`${commit.moduleName}/${commit.mutation}`, commit.payload);
                             }
                             return serverDispatched.result.actionResult;
                         } else {
@@ -93,7 +93,7 @@ export function Module<Schema extends SchemaConstraint>(
             if (process.client) {
                 Object.defineProperty(accessor, "state", {
                     get: function() {
-                        return context.$__store__.state[name];
+                        return context.$__exful.vuexStore.state[name];
                     }
                 });
             }
@@ -103,7 +103,6 @@ export function Module<Schema extends SchemaConstraint>(
     };
     addMeta(creators.accessor, name, "accessor");
 
-    //@ts-ignore
     return creators;
 }
 

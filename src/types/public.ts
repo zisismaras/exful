@@ -36,7 +36,7 @@ export type ActionContext<State, Getters, Mutations, Actions> = {
     getters: Getters extends GetterConstraint ? GettersAsProperties<Getters> : never,
     commit: Mutations extends MutationConstraint ? Commit<Mutations> : never,
     dispatch: Actions extends ActionConstraint ? Dispatch<Actions> : never,
-    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
+    loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
     req: Request,
     res: Response,
     isSSR: boolean
@@ -99,7 +99,7 @@ export type HooksCreator<Schema extends SchemaConstraint> = {
                     res: Response,
                     isSSR: boolean,
                     metadata: HookContextMetaData,
-                    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
+                    loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
                     actionPayload: Parameters<Schema["actions"][key]>[0]
                 }
             ) => void
@@ -111,7 +111,7 @@ export type HooksCreator<Schema extends SchemaConstraint> = {
                     res: Response,
                     isSSR: boolean,
                     metadata: HookContextMetaData,
-                    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
+                    loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
                     actionPayload: unknown
                 }
             ) => void
@@ -122,7 +122,7 @@ export type HooksCreator<Schema extends SchemaConstraint> = {
                     res: Response,
                     isSSR: boolean,
                     metadata: HookContextMetaData,
-                    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
+                    loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
                     actionResult: UnPromisify<ReturnType<Schema["actions"][key]>>,
                     mutations: {
                         moduleName: string;
@@ -139,7 +139,7 @@ export type HooksCreator<Schema extends SchemaConstraint> = {
                     res: Response,
                     isSSR: boolean,
                     metadata: HookContextMetaData,
-                    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
+                    loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
                     actionResult: unknown,
                     mutations: {
                         moduleName: string;
@@ -155,7 +155,7 @@ export type HooksCreator<Schema extends SchemaConstraint> = {
                     res: Response,
                     isSSR: boolean,
                     metadata: HookContextMetaData,
-                    loadModule<M extends keyof Vue["$store"]>(mod: M) : Promise<Vue["$store"][M]>,
+                    loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
                     error: Error
                 }
             ) => void

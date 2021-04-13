@@ -4,40 +4,36 @@ import {Module} from "@nuxt/types";
 import {getDiscover} from "./discover";
 
 const exful: Module = function(_moduleOptions: unknown) {
-    //disable core vuex
-    if (this.options.features) {
-        this.options.features.store = false;
-    }
-
     this.nuxt.options.alias["~exful"] = __dirname;
     this.nuxt.options.alias["~express"] = join(__dirname, "..", "node_modules", "express", "lib");
 
     this.addPlugin({
-        src: join(__dirname, "createConnection.js"),
-        fileName: "./exful/createConnection.js",
+        src: join(__dirname, "plugins", "init.server.js"),
+        fileName: "./exful/init.js",
         mode: "server"
     });
 
     this.addPlugin({
-        src: join(__dirname, "ping.js"),
+        src: join(__dirname, "plugins", "ping.client.js"),
         fileName: "./exful/ping.js",
         mode: "client"
     });
 
     this.addPlugin({
-        src: join(__dirname, "scheduler.js"),
+        src: join(__dirname, "plugins", "scheduler.client.js"),
         fileName: "./exful/scheduler.js",
         mode: "client"
     });
 
-    const nuxtRootStoreDir = join(this.options.rootDir, "store");
+    const exfulDir = join(this.options.rootDir, "exful");
+    //TODO dir not exists?
 
     const moduleLoaderPath = join(__dirname, "..", "templates", "moduleLoader.js");
     this.addPlugin({
         src: moduleLoaderPath,
         fileName: "./exful/modules.js",
         options: {
-            discover: getDiscover(nuxtRootStoreDir, "../../store")
+            discover: getDiscover(exfulDir, "../../exful")
         }
     });
 
@@ -47,41 +43,35 @@ const exful: Module = function(_moduleOptions: unknown) {
         fileName: "./exful/serverDispatcher.js",
         mode: "server",
         options: {
-            discover: getDiscover(nuxtRootStoreDir, "../../store"),
+            discover: getDiscover(exfulDir, "../../exful"),
             enableSSRExpressReqRes: true //TODO from moduleOptions
         }
     });
 
-    /*
-        Can't think of a good way to pass the rootDir to the serverMiddleware
-        while also having working server reloads on store change in development.
-        So we'll just use a global.
-    */
-    //@ts-ignore
-    global.__nuxtRootStoreDir = nuxtRootStoreDir;
-    const actionServerPath = join(__dirname, "actionServer.js");
-    this.addServerMiddleware({
-        path: "/store",
-        handler: actionServerPath
-    });
-
     //the types are generated in the root directory, so ts can pick it up
     const typeLoaderPath = join(__dirname, "..", "templates",  "typeLoader.js");
-    this.addPlugin({
+    this.addTemplate({
         src: typeLoaderPath,
-        fileName: "../storeTypes.ts",
+        fileName: "../exfulTypes.ts",
         options: {
-            discover: getDiscover(nuxtRootStoreDir, "./store")
+            discover: getDiscover(exfulDir, "./exful")
         }
     });
 
-    //on development watch the store directory and trigger reloads
+    global.exful = {dir: exfulDir};
+    const actionServerPath = join(__dirname, "actionServer.js");
+    this.addServerMiddleware({
+        path: "/exful",
+        handler: actionServerPath
+    });
+
+    //on development watch the exful directory and trigger reloads
     if (process.env.NODE_ENV !== "production") {
-        const storeWatcher = require("chokidar").watch(
-            join(this.options.rootDir, "/store/**/*"),
+        const watcher = require("chokidar").watch(
+            join(this.options.rootDir, "/exful/**/*"),
             {ignoreInitial: true}
         );
-        storeWatcher.on("all", function() {
+        watcher.on("all", function() {
             const d = Date.now();
             utimesSync(actionServerPath, d, d);
             utimesSync(typeLoaderPath, d, d);

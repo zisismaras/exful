@@ -1,15 +1,17 @@
 import Vue from "vue";
 import {Plugin} from "@nuxt/types";
+import {initializeContext} from "~exful/initializeContext";
 
 /*
     Simple scheduling mechanism that can execute callbacks serially.
     Built on top of a Vue instance to take advantage of vue's reactivity.
-    We use it to run store api requests 1 at a time as to avoid state mismatches. 
+    We use it to run action api requests 1 at a time as to avoid state mismatches. 
 */
 
 type WrapperCb = () => Promise<void>;
 
-const scheduler: Plugin = function(_context, inject) {
+const scheduler: Plugin = function(context) {
+    initializeContext(context);
     const schedulerVM = new Vue({
         data(): {
             list: WrapperCb[],
@@ -58,7 +60,7 @@ const scheduler: Plugin = function(_context, inject) {
         }
     });
 
-    inject("schedule", function(cb: Function) {
+    context.$__exful.inject("schedule", function(cb) {
         return schedulerVM.schedule(cb);
     });
 };

@@ -1,6 +1,6 @@
 import {readdirSync, existsSync, statSync} from "fs";
 
-//on development don't cache required store modules
+//on development don't cache required modules
 let requirePart = require;
 if (process.env.NODE_ENV !== "production") {
     requirePart = require("import-fresh");
@@ -9,17 +9,17 @@ if (process.env.NODE_ENV !== "production") {
 const VALID_KINDS = ["state", "getters", "mutations", "actions", "hooks"];
 const VALID_NAME = /^[a-zA-Z_$][a-zA-Z_$0-9]*$/;
 
-export function getDiscover(nuxtRootStoreDir: string, relativeStoreDir?: string) {
+export function getDiscover(exfulDir: string, relativeExfulDir?: string) {
     return function discover(result: "paths" | "loaded") {
-        if (!existsSync(nuxtRootStoreDir) || !statSync(nuxtRootStoreDir).isDirectory()) {
+        if (!existsSync(exfulDir) || !statSync(exfulDir).isDirectory()) {
             if (result === "loaded") {
                 return {};
             } else {
                 return [];
             }
         }
-        const modules = readdirSync(nuxtRootStoreDir).filter(function(dir) {
-            if (!statSync(`${nuxtRootStoreDir}/${dir}`).isDirectory()) {
+        const modules = readdirSync(exfulDir).filter(function(dir) {
+            if (!statSync(`${exfulDir}/${dir}`).isDirectory()) {
                 return false;
             }
             return true;
@@ -27,7 +27,7 @@ export function getDiscover(nuxtRootStoreDir: string, relativeStoreDir?: string)
             return {
                 name: dir,
                 directory: dir,
-                absoluteDirectory: `${nuxtRootStoreDir}/${dir}`
+                absoluteDirectory: `${exfulDir}/${dir}`
             };
         });
         for (const mod of Object.values(modules)) {
@@ -50,7 +50,7 @@ export function getDiscover(nuxtRootStoreDir: string, relativeStoreDir?: string)
                 return p.endsWith(".js") || p.endsWith(".ts");
             });
             for (const part of parts) {
-                const partPath = `${nuxtRootStoreDir}/${mod.directory}/${part}`;
+                const partPath = `${exfulDir}/${mod.directory}/${part}`;
                 const loaded = requirePart(partPath);
                 if (loaded?.accessor?.__meta__?.kind === "accessor") {
                     if (mod.name !== loaded.accessor.__meta__.moduleName) {
@@ -72,15 +72,15 @@ export function getDiscover(nuxtRootStoreDir: string, relativeStoreDir?: string)
         }
 
         /*
-            We do all the loading and checking based on the absolute `nuxtRootStoreDir`
+            We do all the loading and checking based on the absolute `exfulDir`
             but at the end we replace the absolute dir with a relative one so
             the generated templates won't have absolute paths in their imports.
             This probably doesn't matter since webpack will just load and bundle the file in either way.
         */
-        if (relativeStoreDir) {
+        if (relativeExfulDir) {
             for (const mod of Object.values(moduleMap)) {
                 for (const kind of Object.values(mod)) {
-                    kind.path = kind.path.replace(nuxtRootStoreDir, relativeStoreDir);
+                    kind.path = kind.path.replace(exfulDir, relativeExfulDir);
                 }
             }
         }

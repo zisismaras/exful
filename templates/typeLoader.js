@@ -1,6 +1,12 @@
 /*
-  Auto-generated type definitions
+  Auto-generated type definitions.
+  Don't edit manually.
+  The type will be rebuilt every time a module is updated.
 */
+// eslint-disable-next-line
+import Vue from "vue";
+// eslint-disable-next-line
+import {Context, NuxtAppOptions} from "@nuxt/types";
 
 <%(function() {
     options.modules = options.discover("paths");
@@ -9,30 +15,24 @@
 import {accessor as <%= mod.name %>} from "<%= mod.root %>";
 <% } %>
 
+type Exful = {
+    <% for (const mod of options.modules) { %>
+    "<%= mod.name %>": ReturnType<typeof <%= mod.name %>>
+    <% } %>
+};
+
 declare module "vue/types/vue" {
     interface Vue {
-        $store: {
-            <% for (const mod of options.modules) { %>
-            "<%= mod.name %>": ReturnType<typeof <%= mod.name %>>
-            <% } %>
-        };
+        $exful: Exful;
     }
 }
 
 declare module "@nuxt/types" {
     interface Context {
-        $store: {
-            <% for (const mod of options.modules) { %>
-            "<%= mod.name %>": ReturnType<typeof <%= mod.name %>>
-            <% } %>
-        };
+        $exful: Exful;
     }
 
     interface NuxtAppOptions {
-        $store: {
-            <% for (const mod of options.modules) { %>
-            "<%= mod.name %>": ReturnType<typeof <%= mod.name %>>
-            <% } %>
-        };
+        $exful: Exful;
     }
 }

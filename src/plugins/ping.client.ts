@@ -1,13 +1,14 @@
 import {Plugin} from "@nuxt/types";
+import {initializeContext} from "~exful/initializeContext";
 
 const PING_INTERVAL = 5 * 60 * 1000;
 let timer: unknown = null;
 
 const ping: Plugin = function(context) {
+    initializeContext(context);
     if (timer) return;
     timer = setInterval(async function() {
-        //@ts-ignore no axios type
-        await context.$axios.put(`/store/ping/${context.nuxtState.$connectionId}`);
+        await context.$axios.put(`/exful/ping/${context.nuxtState.$connectionId}`);
     }, PING_INTERVAL);
 };
 

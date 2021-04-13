@@ -11,9 +11,7 @@ export type Mod = Partial<{
     hooks: {[key: string]: Function}
 }>;
 
-//@ts-ignore check comment in index.ts about the global
-const storeDir: string = global.__nuxtRootStoreDir;
-const discover = getDiscover(storeDir);
+const discover = getDiscover(global.exful.dir);
 const moduleTree = discover("loaded") as {
     [key: string]: Mod
 };
@@ -49,7 +47,7 @@ for (const [moduleName, mod] of Object.entries(moduleTree)) {
                 const actionResult = await initialModule.dispatch(actionName, req.body.payload);
                 const mutations = await applyMutations();
                 if (!res.headersSent) {
-                    //TODO log.error if headersSent "dont't modify store response"
+                    //TODO log.error if headersSent && status < 400 "dont't modify default response unless it's an error"
                     res.json({
                         actionResult,
                         mutations
