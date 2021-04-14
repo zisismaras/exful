@@ -6,6 +6,16 @@ import {
 } from "./public";
 import {OptionalSpread} from "./utility";
 
+declare global {
+    namespace NodeJS {
+        interface Global {
+            exful: {
+                dir: string
+            }
+        }
+    }
+}
+
 //we don't use the standard MutationConstraint and ActionConstraint
 //but instead we redefine them using the optionalSpread hack to make everyone happy
 

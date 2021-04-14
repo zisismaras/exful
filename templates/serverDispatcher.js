@@ -1,6 +1,7 @@
 import ExpressRequest from "~express/request";
 import ExpressResponse from "~express/response";
 import {startDispatchChain} from "~exful/actionRunner";
+import {initializeContext} from "~exful/initializeContext";
 
 <%(function() {
     options.modules = options.discover("paths");
@@ -78,7 +79,8 @@ function getDispatch(req, res) {
 /**
  * @type {import('@nuxt/types').Plugin}
  */
-export default function(context, inject) {
+export default function(context) {
+    initializeContext(context);
     <% if (options.enableSSRExpressReqRes === true) { %>
         context.req.res = context.res;
         context.res.req = context.req;
@@ -86,5 +88,5 @@ export default function(context, inject) {
         Reflect.setPrototypeOf(context.req, ExpressRequest);
         Reflect.setPrototypeOf(context.res, ExpressResponse);
     <% } %>
-    inject("dispatch", getDispatch(context.req, context.res));
+    context.$__exful.inject("dispatch", getDispatch(context.req, context.res));
 }
