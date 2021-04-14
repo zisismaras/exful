@@ -1,4 +1,5 @@
 import "@nuxt/types";
+import "@nuxtjs/axios";
 import Vue from "vue";
 import {Context, NuxtAppOptions} from "@nuxt/types";
 import {AbstractLoadedModule} from "./internal";
