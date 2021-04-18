@@ -6,7 +6,8 @@
   "types": "dist/exful.d.ts",
   "exports": {
     ".": "./dist/exful.js",
-    "./nuxt": "./dist/nuxt.js"
+    "./nuxt/build": "./dist/nuxt/build.js",
+    "./nuxt/runtime": "./dist/nuxt/runtime.js"
   },
   "files": [
     "dist",
