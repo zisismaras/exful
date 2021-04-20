@@ -1,6 +1,7 @@
 import {Plugin} from "@nuxt/types";
 import {initializeContext} from "~exful/initializeContext";
 
+//TODO move it to templates and take the interval from options
 const PING_INTERVAL = 5 * 60 * 1000;
 let timer: unknown = null;
 

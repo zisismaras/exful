@@ -36,6 +36,7 @@
     "@typescript-eslint/parser": "^4.18.0",
     "eslint": "^7.22.0",
     "nuxt": "^2.15.3",
+    "ts-essentials": "^7.0.1",
     "typescript": "^4.2.3"
   }
 }

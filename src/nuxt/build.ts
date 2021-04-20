@@ -2,8 +2,10 @@ import {join} from "path";
 import {utimesSync} from "fs";
 import {Module} from "@nuxt/types";
 import {getDiscover} from "../discover";
+import {setDefaultOptions} from "./options";
 
 const exfulBuild: Module = function() {
+    setDefaultOptions(this.options);
     this.nuxt.options.alias["~exful"] = join(__dirname, "..");
     this.nuxt.options.alias["~express"] = join(
         __dirname,

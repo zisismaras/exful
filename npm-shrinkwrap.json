@@ -11255,6 +11255,12 @@
       "integrity": "sha512-gduQwd1rOdDMGxFG1gEvhV88Oirdo2p+KjoYFU7k2g+i7n6AFFbDQ5kMPUsW0pNbfQsB/cwXvT1i4Bue0s9g5g==",
       "dev": true
     },
+    "ts-essentials": {
+      "version": "7.0.1",
+      "resolved": "https://registry.npmjs.org/ts-essentials/-/ts-essentials-7.0.1.tgz",
+      "integrity": "sha512-8lwh3QJtIc1UWhkQtr9XuksXu3O0YQdEE5g79guDfhCaU1FWTDIEDZ1ZSx4HTHUmlJZ8L812j3BZQ4a0aOUkSA==",
+      "dev": true
+    },
     "ts-pnp": {
       "version": "1.2.0",
       "resolved": "https://registry.npmjs.org/ts-pnp/-/ts-pnp-1.2.0.tgz",
