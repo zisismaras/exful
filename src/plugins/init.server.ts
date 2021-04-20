@@ -1,10 +1,12 @@
 import {Plugin} from "@nuxt/types";
 import {initializeContext} from "~exful/initializeContext";
-import {newConnection} from "~exful/stateTree";
+
+//@ts-ignore
+const {newConnection} = __non_webpack_require__("exful/dist/stateTree");
 
 const init: Plugin = async function(context) {
     initializeContext(context);
-    const connectionId = await newConnection();
+    const connectionId: string = await newConnection();
     context.beforeNuxtRender(({ nuxtState }) => {
         //pass existing ssr module states
         nuxtState.$__exful = {};
