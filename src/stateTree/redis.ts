@@ -1,9 +1,19 @@
 import {v4 as uuid} from "uuid";
 import Redis from "ioredis";
+import {ExfulOptions} from "../types/extendedOptions";
 
-const redisClient = new Redis();
+let redisClient: Redis.Redis;
+let CONNECTION_TTL: number;
 
-const CONNECTION_TTL = 3600;
+export function initialize(options: ExfulOptions["backend"]) {
+    if (redisClient) {
+        throw new Error("[exful] Backend already initialized");
+    }
+    if (options.type === "redis") {
+        redisClient = new Redis(options.options);
+        CONNECTION_TTL = options.connectionTTL;
+    }
+}
 
 export async function newConnection() {
     const connectionId = uuid();

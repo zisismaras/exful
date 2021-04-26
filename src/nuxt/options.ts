@@ -17,11 +17,14 @@ export function setDefaultOptions(options: NuxtOptions) {
     if (!options.exful.backend.type) {
         options.exful.backend.type = "memory";
     }
+    if (options.exful.backend.type !== "memory" && options.exful.backend.type !== "redis") {
+        options.exful.backend.type = "memory";
+    }
     //default connectionTTL if redis
     if (options.exful.backend.type === "redis") {
         options.exful.backend.connectionTTL = options.exful.backend.connectionTTL || 3600;
-        if (options.exful.pingInterval > options.exful.backend.connectionTTL) {
-            throw new Error("pingInterval can't be greater than connectionTTL");
+        if (options.exful.pingInterval / 1000 > options.exful.backend.connectionTTL) {
+            throw new Error("[exful] pingInterval can't be greater than connectionTTL");
         }
     }
 }
