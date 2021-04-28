@@ -25,7 +25,8 @@ export function initializeStateTree(options: ExfulOptions["backend"]) {
             newConnection: memory.newConnection,
             renewConnection: memory.renewConnection,
             getState: memory.getState,
-            updateState: memory.updateState
+            updateState: memory.updateState,
+            initializeStateTree: () => undefined
         };
     } else if (options.type === "redis") {
         redis.initialize(options);
@@ -33,7 +34,8 @@ export function initializeStateTree(options: ExfulOptions["backend"]) {
             newConnection: redis.newConnection,
             renewConnection: redis.renewConnection,
             getState: redis.getState,
-            updateState: redis.updateState
+            updateState: redis.updateState,
+            initializeStateTree: () => undefined
         };
     } else {
         throw new Error("[exful] Invalid backend option");
