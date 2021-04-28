@@ -19,9 +19,11 @@ export type ExfulOptions = {
     }
 };
 
+export type PartialExfulOptions = DeepPartial<ExfulOptions>;
+
 declare module "@nuxt/types" {
     interface NuxtOptions {
-        exful?: DeepPartial<ExfulOptions>
+        exful?: PartialExfulOptions
     }
 }
 
