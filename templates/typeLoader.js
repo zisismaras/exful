@@ -6,7 +6,8 @@
 // eslint-disable-next-line
 import Vue from "vue";
 // eslint-disable-next-line
-import {Context, NuxtAppOptions} from "@nuxt/types";
+import {Context, NuxtAppOptions, NuxtOptions} from "@nuxt/types";
+import {PartialExfulOptions} from "exful/dist/types/extendedOptions";
 
 <%(function() {
     options.modules = options.discover("paths");
@@ -34,5 +35,9 @@ declare module "@nuxt/types" {
 
     interface NuxtAppOptions {
         $exful: Exful;
+    }
+
+    interface NuxtOptions {
+        exful?: PartialExfulOptions
     }
 }

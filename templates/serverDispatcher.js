@@ -1,7 +1,8 @@
 import ExpressRequest from "~express/request";
 import ExpressResponse from "~express/response";
-import {startDispatchChain} from "~exful/actionRunner";
 import {initializeContext} from "~exful/initializeContext";
+
+const {startDispatchChain} = __non_webpack_require__("exful/dist/actionRunner");
 
 <%(function() {
     options.modules = options.discover("paths");

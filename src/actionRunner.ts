@@ -45,7 +45,6 @@ export async function startDispatchChain(params: {
 }
 
 //runs the mutations on the currentStates and calls stateTree.updateState() to persist them
-//TODO to create the stateTree adapter system we can pass updateState() as a parameter here
 async function applyMutations(params: {
     connectionId: string,
     moduleTree: {[key: string]: Mod},
