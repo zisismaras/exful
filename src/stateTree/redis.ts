@@ -10,7 +10,7 @@ export function initialize(options: ExfulOptions["backend"]) {
         throw new Error("[exful] Backend already initialized");
     }
     if (options.type === "redis") {
-        redisClient = new Redis(options.options);
+        redisClient = new Redis(options.connectionOptions);
         CONNECTION_TTL = options.connectionTTL;
     }
 }

@@ -7,14 +7,16 @@ export type ExfulOptions = {
     experimental: {
         enableSSRExpressReqRes: boolean
     },
-    backend: {
+    backend: ({
         type: "redis",
-        options: RedisOptions,
-        connectionTTL: number
+        connectionOptions: RedisOptions
     } | {
-        type: "memory"
-    },
-    pingInterval: number
+        type: "memory",
+        checkExpiredInterval: number
+    }) & {
+        pingInterval: number,
+        connectionTTL: number
+    }
 };
 
 declare module "@nuxt/types" {

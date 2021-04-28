@@ -9,10 +9,8 @@ export function setDefaultOptions(options: NuxtOptions) {
         options.exful.experimental.enableSSRExpressReqRes = false :
         options.exful.experimental.enableSSRExpressReqRes = true;
 
-    //default pingInterval
-    options.exful.pingInterval = options.exful.pingInterval || 5 * 60 * 1000;
-
     options.exful.backend = options.exful.backend || {};
+
     //default backend
     if (!options.exful.backend.type) {
         options.exful.backend.type = "memory";
@@ -20,11 +18,20 @@ export function setDefaultOptions(options: NuxtOptions) {
     if (options.exful.backend.type !== "memory" && options.exful.backend.type !== "redis") {
         options.exful.backend.type = "memory";
     }
-    //default connectionTTL if redis
-    if (options.exful.backend.type === "redis") {
-        options.exful.backend.connectionTTL = options.exful.backend.connectionTTL || 3600;
-        if (options.exful.pingInterval / 1000 > options.exful.backend.connectionTTL) {
-            throw new Error("[exful] pingInterval can't be greater than connectionTTL");
-        }
+
+    //all intervals are in seconds
+
+    //default connectionTTL
+    options.exful.backend.connectionTTL = options.exful.backend.connectionTTL || 3600;
+
+    //default pingInterval
+    options.exful.backend.pingInterval = options.exful.backend.pingInterval || 360;
+    if (options.exful.backend.pingInterval > options.exful.backend.connectionTTL) {
+        throw new Error("[exful] pingInterval can't be greater than connectionTTL");
+    }
+
+    //default checkExpiredInterval
+    if (options.exful.backend.type === "memory") {
+        options.exful.backend.checkExpiredInterval = options.exful.backend.checkExpiredInterval || 60;
     }
 }
