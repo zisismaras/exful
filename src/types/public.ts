@@ -44,7 +44,7 @@ export type ActionContext<State, Getters, Mutations, Actions> = {
 }
 
 //creators
-export type CreatorMeta<Kind extends "state" | "getters" | "mutations" | "actions" | "hooks" | "accessor"> = {
+export type CreatorMeta<Kind extends "state" | "getters" | "mutations" | "actions" | "hooks" | "accessor" | "global_hooks"> = {
     __meta__: {
         moduleName: string,
         kind: Kind
@@ -179,3 +179,44 @@ export type PreAccessorCreator<Schema extends SchemaConstraint> = (
     context: Context
 ) => Accessor<Schema>;
 export type AccessorCreator<Schema extends SchemaConstraint> = PreAccessorCreator<Schema> & CreatorMeta<"accessor">;
+
+type GlobalHooks = Partial<{
+    before: (
+        hookContext: {
+            req: Request,
+            res: Response,
+            isSSR: boolean,
+            metadata: HookContextMetaData,
+            loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
+            actionPayload: unknown
+        }
+    ) => void,
+    after: (
+        hookContext: {
+            req: Request,
+            res: Response,
+            isSSR: boolean,
+            metadata: HookContextMetaData,
+            loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
+            actionResult: unknown,
+            mutations: {
+                moduleName: string;
+                mutation: string;
+                payload: unknown;
+            }[]
+        }
+    ) => void,
+    error: (
+        hookContext: {
+            req: Request,
+            res: Response,
+            isSSR: boolean,
+            metadata: HookContextMetaData,
+            loadModule<M extends keyof Vue["$exful"] & string>(mod: M) : Promise<Vue["$exful"][M]>,
+            error: Error
+        }
+    ) => void
+}>;
+export type GlobalHooksCreator = (
+    hooks: GlobalHooks
+) => GlobalHooks  & CreatorMeta<"global_hooks">

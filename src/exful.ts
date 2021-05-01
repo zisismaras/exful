@@ -6,7 +6,8 @@ import {
     MutationCreator,
     ActionCreator,
     HooksCreator,
-    AccessorCreator
+    AccessorCreator,
+    GlobalHooksCreator
 } from "./types/public";
 
 export function Module<Schema extends SchemaConstraint>(
@@ -38,6 +39,10 @@ export function Module<Schema extends SchemaConstraint>(
         accessor: addMeta(getAccessor(name), name, "accessor")
     };
 }
+
+export const GlobalHooks: GlobalHooksCreator = function(globalHooks) {
+    return addMeta(globalHooks, "__global__", "global_hooks");
+};
 
 function addMeta<T, K extends string>(
     o: T, moduleName: string,

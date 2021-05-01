@@ -1,6 +1,6 @@
 import {Request, Response} from "express";
 import {getState, updateState} from "./stateTree";
-import {Mod} from "./actionServer";
+import {Mod, GlobalHooks} from "./actionServer";
 import {AbstractActionContext, AbstractLoadedModule} from "./types/internal";
 
 type CommitTracker = {moduleName: string, mutation: string, payload: unknown}[];
@@ -11,6 +11,7 @@ export async function startDispatchChain(params: {
     connectionId: string,
     initialModuleName: string,
     moduleTree: {[key: string]: Mod},
+    globalHooks: GlobalHooks,
     req: Request,
     res: Response,
     isSSR: boolean
@@ -23,6 +24,7 @@ export async function startDispatchChain(params: {
     const loadModule = getLoadModule({
         connectionId: params.connectionId,
         moduleTree: params.moduleTree,
+        globalHooks: params.globalHooks,
         req: params.req,
         res: params.res,
         isSSR: params.isSSR,
@@ -80,6 +82,7 @@ function createGetters(
 async function runAction(params: {
     moduleName: string,
     moduleTree: {[key: string]: Mod},
+    globalHooks: GlobalHooks,
     commitTracker: CommitTracker,
     actionName: string,
     actionContext: AbstractActionContext,
@@ -91,6 +94,23 @@ async function runAction(params: {
     try {
         if (!mod.actions || !mod.actions[params.actionName]) {
             throw new Error(`Unknown action ${params.moduleName}/${params.actionName}`);
+        }
+        //run global before
+        for (const hook of params.globalHooks) {
+            if (hook.before) {
+                await hook.before({
+                    req: params.actionContext.req,
+                    res: params.actionContext.res,
+                    isSSR: params.isSSR,
+                    metadata: {
+                        moduleName: params.moduleName,
+                        actionName: params.actionName,
+                        hookName: "before"
+                    },
+                    loadModule: params.actionContext.loadModule,
+                    actionPayload: params.actionPayload
+                });
+            }
         }
         //run before:all
         if (mod.hooks && mod.hooks["before:all"]) {
@@ -159,6 +179,24 @@ async function runAction(params: {
                 mutations: params.commitTracker
             });
         }
+        //run global after
+        for (const hook of params.globalHooks) {
+            if (hook.after) {
+                await hook.after({
+                    req: params.actionContext.req,
+                    res: params.actionContext.res,
+                    isSSR: params.isSSR,
+                    metadata: {
+                        moduleName: params.moduleName,
+                        actionName: params.actionName,
+                        hookName: "after"
+                    },
+                    loadModule: params.actionContext.loadModule,
+                    actionResult,
+                    mutations: params.commitTracker
+                });
+            }
+        }
         
         return actionResult as unknown;
     } catch (e) {
@@ -194,6 +232,23 @@ async function runAction(params: {
                     error: e
                 });
             }
+            //run global error
+            for (const hook of params.globalHooks) {
+                if (hook.error) {
+                    await hook.error({
+                        req: params.actionContext.req,
+                        res: params.actionContext.res,
+                        isSSR: params.isSSR,
+                        metadata: {
+                            moduleName: params.moduleName,
+                            actionName: params.actionName,
+                            hookName: "error"
+                        },
+                        loadModule: params.actionContext.loadModule,
+                        error: e
+                    });
+                }
+            }
         } catch (ee) {
             //TODO log.error that the error hooks also threw an error
             //just log this one and only re-throw the actual action error
@@ -210,6 +265,7 @@ async function runAction(params: {
 function getLoadModule(params: {
     connectionId: string,
     moduleTree: {[key: string]: Mod},
+    globalHooks: GlobalHooks,
     req: Request,
     res: Response,
     isSSR: boolean,
@@ -251,6 +307,7 @@ function getLoadModule(params: {
                 return runAction({
                     moduleName,
                     moduleTree: params.moduleTree,
+                    globalHooks: params.globalHooks,
                     commitTracker: params.commitTracker,
                     actionName,
                     actionContext,
