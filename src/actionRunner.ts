@@ -95,6 +95,14 @@ async function runAction(params: {
         if (!mod.actions || !mod.actions[params.actionName]) {
             throw new Error(`Unknown action ${params.moduleName}/${params.actionName}`);
         }
+        /*
+            ordering:
+
+            global before -> before:all -> before:{action} 
+            action
+            global after -> after:all -> after:{action}
+            global error -> error:all -> error:{action}
+        */
         //run global before
         for (const hook of params.globalHooks) {
             if (hook.before) {
@@ -147,38 +155,6 @@ async function runAction(params: {
             params.actionContext,
             params.actionPayload
         );
-        //run after:{action}
-        if (mod.hooks && mod.hooks[`after:${params.actionName}`]) {
-            await mod.hooks[`after:${params.actionName}`]({
-                req: params.actionContext.req,
-                res: params.actionContext.res,
-                isSSR: params.isSSR,
-                metadata: {
-                    moduleName: params.moduleName,
-                    actionName: params.actionName,
-                    hookName: `after:${params.actionName}`
-                },
-                loadModule: params.actionContext.loadModule,
-                actionResult,
-                mutations: params.commitTracker
-            });
-        }
-        //run after:all
-        if (mod.hooks && mod.hooks["after:all"]) {
-            await mod.hooks["after:all"]({
-                req: params.actionContext.req,
-                res: params.actionContext.res,
-                isSSR: params.isSSR,
-                metadata: {
-                    moduleName: params.moduleName,
-                    actionName: params.actionName,
-                    hookName: "after:all"
-                },
-                loadModule: params.actionContext.loadModule,
-                actionResult,
-                mutations: params.commitTracker
-            });
-        }
         //run global after
         for (const hook of params.globalHooks) {
             if (hook.after) {
@@ -197,41 +173,43 @@ async function runAction(params: {
                 });
             }
         }
+        //run after:all
+        if (mod.hooks && mod.hooks["after:all"]) {
+            await mod.hooks["after:all"]({
+                req: params.actionContext.req,
+                res: params.actionContext.res,
+                isSSR: params.isSSR,
+                metadata: {
+                    moduleName: params.moduleName,
+                    actionName: params.actionName,
+                    hookName: "after:all"
+                },
+                loadModule: params.actionContext.loadModule,
+                actionResult,
+                mutations: params.commitTracker
+            });
+        }
+        //run after:{action}
+        if (mod.hooks && mod.hooks[`after:${params.actionName}`]) {
+            await mod.hooks[`after:${params.actionName}`]({
+                req: params.actionContext.req,
+                res: params.actionContext.res,
+                isSSR: params.isSSR,
+                metadata: {
+                    moduleName: params.moduleName,
+                    actionName: params.actionName,
+                    hookName: `after:${params.actionName}`
+                },
+                loadModule: params.actionContext.loadModule,
+                actionResult,
+                mutations: params.commitTracker
+            });
+        }
         
         return actionResult as unknown;
     } catch (e) {
         actionError = e;
         try {
-            //run error:{action}
-            if (mod.hooks && mod.hooks[`error:${params.actionName}`]) {
-                await mod.hooks[`error:${params.actionName}`]({
-                    req: params.actionContext.req,
-                    res: params.actionContext.res,
-                    isSSR: params.isSSR,
-                    metadata: {
-                        moduleName: params.moduleName,
-                        actionName: params.actionName,
-                        hookName: `error:${params.actionName}`
-                    },
-                    loadModule: params.actionContext.loadModule,
-                    error: e
-                });
-            }
-            //run error:all
-            if (mod.hooks && mod.hooks["error:all"]) {
-                await mod.hooks["error:all"]({
-                    req: params.actionContext.req,
-                    res: params.actionContext.res,
-                    isSSR: params.isSSR,
-                    metadata: {
-                        moduleName: params.moduleName,
-                        actionName: params.actionName,
-                        hookName: "error:all"
-                    },
-                    loadModule: params.actionContext.loadModule,
-                    error: e
-                });
-            }
             //run global error
             for (const hook of params.globalHooks) {
                 if (hook.error) {
@@ -248,6 +226,36 @@ async function runAction(params: {
                         error: e
                     });
                 }
+            }
+            //run error:all
+            if (mod.hooks && mod.hooks["error:all"]) {
+                await mod.hooks["error:all"]({
+                    req: params.actionContext.req,
+                    res: params.actionContext.res,
+                    isSSR: params.isSSR,
+                    metadata: {
+                        moduleName: params.moduleName,
+                        actionName: params.actionName,
+                        hookName: "error:all"
+                    },
+                    loadModule: params.actionContext.loadModule,
+                    error: e
+                });
+            }
+            //run error:{action}
+            if (mod.hooks && mod.hooks[`error:${params.actionName}`]) {
+                await mod.hooks[`error:${params.actionName}`]({
+                    req: params.actionContext.req,
+                    res: params.actionContext.res,
+                    isSSR: params.isSSR,
+                    metadata: {
+                        moduleName: params.moduleName,
+                        actionName: params.actionName,
+                        hookName: `error:${params.actionName}`
+                    },
+                    loadModule: params.actionContext.loadModule,
+                    error: e
+                });
             }
         } catch (ee) {
             //TODO log.error that the error hooks also threw an error
