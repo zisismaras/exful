@@ -6,6 +6,7 @@ const {startDispatchChain} = __non_webpack_require__("exful/dist/actionRunner");
 
 <%(function() {
     options.modules = options.discover("paths");
+    options.globalHooks = options.globalHooksDiscover("paths");
 })()%>
 <% for (const mod of options.modules) { %>
     <% if (mod.actions) { %>
@@ -23,6 +24,11 @@ const {startDispatchChain} = __non_webpack_require__("exful/dist/actionRunner");
     <% if (mod.hooks) { %>
         import Hooks_<%= mod.name %> from "<%= mod.hooks %>";
     <% } %>
+<% } %>
+
+const globalHooks = [];
+<% for (const globalHookPath of options.globalHooks) { %>
+    globalHooks.push(require("<%= globalHookPath %>").default)
 <% } %>
 
 const moduleTree = {
@@ -53,6 +59,7 @@ function getDispatch(req, res) {
                 connectionId,
                 initialModuleName: moduleName,
                 moduleTree,
+                globalHooks,
                 req,
                 res,
                 isSSR: true

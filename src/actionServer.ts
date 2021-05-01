@@ -1,5 +1,5 @@
 import Express from "express";
-import {getDiscover} from "./discover";
+import {getDiscover, getGlobalHooksDiscover} from "./discover";
 import {startDispatchChain} from "./actionRunner";
 import {renewConnection} from "./stateTree";
 
@@ -11,10 +11,18 @@ export type Mod = Partial<{
     hooks: {[key: string]: Function}
 }>;
 
+export type GlobalHooks = Partial<{
+    before: Function,
+    after: Function,
+    error: Function
+}>[];
+
 const discover = getDiscover(global.exful.dir);
+const globalHooksDiscover = getGlobalHooksDiscover(global.exful.dir);
 const moduleTree = discover("loaded") as {
     [key: string]: Mod
 };
+const globalHooks = globalHooksDiscover("loaded") as GlobalHooks;
 
 const app = Express();
 app.disable("x-powered-by");
@@ -40,6 +48,7 @@ for (const [moduleName, mod] of Object.entries(moduleTree)) {
                     connectionId: req.body.connectionId,
                     initialModuleName: moduleName,
                     moduleTree,
+                    globalHooks,
                     req,
                     res,
                     isSSR: false

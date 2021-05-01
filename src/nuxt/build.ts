@@ -1,7 +1,7 @@
 import {join} from "path";
 import {utimesSync} from "fs";
 import {Module} from "@nuxt/types";
-import {getDiscover} from "../discover";
+import {getDiscover, getGlobalHooksDiscover} from "../discover";
 import {setDefaultOptions} from "./options";
 import {ExfulOptions} from "../types/extendedOptions";
 
@@ -57,6 +57,7 @@ const exfulBuild: Module = function() {
         mode: "server",
         options: {
             discover: getDiscover(exfulDir, "../../exful"),
+            globalHooksDiscover: getGlobalHooksDiscover(exfulDir, "../../exful"),
             enableSSRExpressReqRes: exfulOptions.experimental.enableSSRExpressReqRes
         }
     });

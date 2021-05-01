@@ -113,3 +113,50 @@ export function getDiscover(exfulDir: string, relativeExfulDir?: string) {
         }
     };
 }
+
+/*
+    Same thing as the standard discover() but looks in the
+    root directory for files that define global hooks
+*/
+export function getGlobalHooksDiscover(exfulDir: string, relativeExfulDir?: string) {
+    return function globalHooksDiscover(result: "paths" | "loaded") {
+        if (!existsSync(exfulDir) || !statSync(exfulDir).isDirectory()) {
+            return [];
+        }
+        let globals = readdirSync(exfulDir).filter(function(entry) {
+            if (!statSync(`${exfulDir}/${entry}`).isFile()) {
+                return false;
+            }
+            if (!entry.endsWith(".js") && !entry.endsWith(".ts")) {
+                return false;
+            }
+            return true;
+        }).map(function(entry) {
+            const loaded = requirePart(`${exfulDir}/${entry}`);
+            if (
+                loaded?.default?.__meta__?.moduleName === "__global__" &&
+                loaded?.default?.__meta__?.kind === "global_hooks"
+            ) {
+                return {
+                    path: `${exfulDir}/${entry}`.replace(/\.js|\.ts$/, ""),
+                    loaded: loaded.default
+                };
+            } else {
+                return null;
+            }
+        }).filter((entry): entry is NonNullable<typeof entry> => !!entry);
+
+        if (relativeExfulDir) {
+            globals = globals.map(function(entry) {
+                entry.path = entry.path.replace(exfulDir, relativeExfulDir);
+                return entry;
+            });
+        }
+
+        if (result === "paths") {
+            return globals.map(entry => entry.path);
+        } else {
+            return globals.map(entry => entry.loaded);
+        }
+    };
+}
