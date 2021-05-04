@@ -40,9 +40,9 @@ export function Module<Schema extends SchemaConstraint>(
     };
 }
 
-export const GlobalHooks: GlobalHooksCreator = function(globalHooks) {
+export function GlobalHooks(globalHooks: Parameters<GlobalHooksCreator>[0]): ReturnType<GlobalHooksCreator> {
     return addMeta(globalHooks, "__global__", "global_hooks");
-};
+}
 
 function addMeta<T, K extends string>(
     o: T, moduleName: string,
