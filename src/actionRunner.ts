@@ -1,4 +1,5 @@
 import {Request, Response} from "express";
+import {logger} from "./logger";
 import {getState, updateState} from "./stateTree";
 import {Mod, GlobalHooks} from "./actionServer";
 import {AbstractActionContext, AbstractLoadedModule} from "./types/internal";
@@ -93,7 +94,7 @@ async function runAction(params: {
     let actionError: Error | null = null;
     try {
         if (!mod.actions || !mod.actions[params.actionName]) {
-            throw new Error(`Unknown action ${params.moduleName}/${params.actionName}`);
+            throw new Error(`[exful] Unknown action ${params.moduleName}/${params.actionName}`);
         }
         /*
             ordering:
@@ -258,8 +259,9 @@ async function runAction(params: {
                 });
             }
         } catch (ee) {
-            //TODO log.error that the error hooks also threw an error
             //just log this one and only re-throw the actual action error
+            logger.warn("[exful] Error hook also threw an error");
+            logger.error(ee);
         }
     }
     //re-throw the action error
@@ -282,7 +284,7 @@ function getLoadModule(params: {
 }): (moduleName: string) =>  Promise<AbstractLoadedModule> {
     return async function loadModule(moduleName) {
         if (!Object.keys(params.moduleTree).includes(moduleName)) {
-            throw new Error(`Unknown module ${moduleName}`);
+            throw new Error(`[exful] Unknown module ${moduleName}`);
         }
         const mod = params.moduleTree[moduleName];
         let moduleState;
@@ -307,7 +309,7 @@ function getLoadModule(params: {
             isSSR: params.isSSR,
             commit: function(mutation: string, payload: unknown) {
                 if (!mod.mutations || !mod.mutations[mutation]) {
-                    throw new Error(`Unknown mutation ${moduleName}/${mutation}`);
+                    throw new Error(`[exful] Unknown mutation ${moduleName}/${mutation}`);
                 }
                 params.commitTracker.push({moduleName: moduleName, mutation, payload});
             },

@@ -1,4 +1,5 @@
 import Express from "express";
+import {logger} from "./logger";
 import {getDiscover, getGlobalHooksDiscover} from "./discover";
 import {startDispatchChain} from "./actionRunner";
 import {renewConnection} from "./stateTree";
@@ -35,7 +36,10 @@ app.put("/ping/:connectionId", async function(req, res) {
         res.setHeader("Cache-Control", "no-cache");
         res.send("pong");
     } catch (e) {
-        //TODO log.error
+        logger.error(e);
+        res.status(500).json({
+            message: "Internal server error"
+        });
     }
 });
 
@@ -55,16 +59,17 @@ for (const [moduleName, mod] of Object.entries(moduleTree)) {
                 });
                 const actionResult = await initialModule.dispatch(actionName, req.body.payload);
                 const mutations = await applyMutations();
+                if (res.headersSent && res.statusCode < 400) {
+                    logger.warn("[exful] Non-error action responses should not be modified");
+                }
                 if (!res.headersSent) {
-                    //TODO log.error if headersSent && status < 400 "dont't modify default response unless it's an error"
                     res.json({
                         actionResult,
                         mutations
                     });
                 }
             } catch (e) {
-                //TODO log.error the error
-                console.error(e);
+                logger.error(e);
                 //return default error response
                 if (!res.headersSent) {
                     res.status(500).json({

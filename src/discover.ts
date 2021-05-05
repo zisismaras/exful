@@ -32,7 +32,7 @@ export function getDiscover(exfulDir: string, relativeExfulDir?: string) {
         });
         for (const mod of Object.values(modules)) {
             if (!VALID_NAME.test(mod.name)) {
-                throw new Error(`Module name (${mod.name}) is not a valid javascript variable name`);
+                throw new Error(`[exful] Module name (${mod.name}) is not a valid javascript variable name`);
             }
         }
 
@@ -54,7 +54,7 @@ export function getDiscover(exfulDir: string, relativeExfulDir?: string) {
                 const loaded = requirePart(partPath);
                 if (loaded?.accessor?.__meta__?.kind === "accessor") {
                     if (mod.name !== loaded.accessor.__meta__.moduleName) {
-                        throw new Error(`Module name (${loaded.accessor.__meta__.moduleName}) does not match the directory name (${mod.name})`);
+                        throw new Error(`[exful] Module name (${loaded.accessor.__meta__.moduleName}) does not match the directory name (${mod.name})`);
                     }
                     moduleMap[mod.name].root = {
                         path: partPath.replace(/\.js|\.ts$/, ""),

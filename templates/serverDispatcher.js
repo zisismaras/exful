@@ -2,6 +2,7 @@ import ExpressRequest from "~express/request";
 import ExpressResponse from "~express/response";
 import {initializeContext} from "~exful/initializeContext";
 
+const {logger} = __non_webpack_require__("exful/dist/logger");
 const {startDispatchChain} = __non_webpack_require__("exful/dist/actionRunner");
 
 <%(function() {
@@ -75,8 +76,7 @@ function getDispatch(req, res) {
                 }
             };
         } catch (e) {
-            //TODO log.error the error
-            console.error(e);
+            logger.error(e);
             return {
                 status: "error"
             }

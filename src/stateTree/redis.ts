@@ -27,7 +27,7 @@ export async function newConnection() {
 
 export async function renewConnection(connectionId: string, moduleNames: string[]) {
     if (!await redisClient.exists(`exful#connection#${connectionId}`)) {
-        throw new Error("Unknown connection");
+        throw new Error(`[exful] Unknown connection ${connectionId}`);
     }
     const multi = redisClient.multi();
     multi.expire(`exful#connection#${connectionId}`, CONNECTION_TTL);
@@ -42,7 +42,7 @@ export async function updateState(
     newStates: {[key: string]: Record<string, unknown>}
 ) {
     if (!await redisClient.exists(`exful#connection#${connectionId}`)) {
-        throw new Error("Unknown connection");
+        throw new Error(`[exful] Unknown connection ${connectionId}`);
     }
     const multi = redisClient.multi();
     for (const [moduleName, newState] of Object.entries(newStates)) {
@@ -61,7 +61,7 @@ export async function getState(
     initialState: () => Record<string, unknown>
 ) {
     if (!await redisClient.exists(`exful#connection#${connectionId}`)) {
-        throw new Error("Unknown connection");
+        throw new Error(`[exful] Unknown connection ${connectionId}`);
     }
     let state = await redisClient.get(`exful#state#${connectionId}#${moduleName}`);
     if (!state) {

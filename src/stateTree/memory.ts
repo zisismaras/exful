@@ -25,7 +25,7 @@ export function newConnection() {
 
 export function renewConnection(connectionId: string, moduleNames: string[]) {
     if (!memoryState.get(`exful#connection#${connectionId}`)) {
-        throw new Error("Unknown connection");
+        throw new Error(`[exful] Unknown connection ${connectionId}`);
     }
     memoryState.ttl(`exful#connection#${connectionId}`, CONNECTION_TTL);
     for (const moduleName of moduleNames) {
@@ -40,7 +40,7 @@ export function getState(
     initialState: () => Record<string, unknown>
 ) {
     if (!memoryState.get(`exful#connection#${connectionId}`)) {
-        throw new Error("Unknown connection");
+        throw new Error(`[exful] Unknown connection ${connectionId}`);
     }
     let state = memoryState.get<Record<string, unknown>>(`exful#state#${connectionId}#${moduleName}`);
     if (!state) {
@@ -56,7 +56,7 @@ export function updateState(
     newStates: {[key: string]: Record<string, unknown>}
 ) {
     if (!memoryState.get(`exful#connection#${connectionId}`)) {
-        throw new Error("Unknown connection");
+        throw new Error(`[exful] Unknown connection ${connectionId}`);
     }
     for (const [moduleName, newState] of Object.entries(newStates)) {
         memoryState.set(`exful#state#${connectionId}#${moduleName}`, newState, CONNECTION_TTL);
