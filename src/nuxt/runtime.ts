@@ -10,7 +10,9 @@ const pkg = require("../../package.json");
 const exfulRuntime: Module = function() {
     setDefaultOptions(this.options);
     const options = this.options.exful as ExfulOptions;
+
     initializeStateTree(options.backend);
+
     const exfulDir = join(this.options.rootDir, "exful");
     global.exful = {dir: exfulDir};
     const actionServerPath = join(__dirname, "..", "actionServer.js");
@@ -18,6 +20,9 @@ const exfulRuntime: Module = function() {
         path: "/exful",
         handler: actionServerPath
     });
+
+    this.requireModule("@nuxtjs/axios");
+
     this.nuxt.hook("listen", () => {
         const label = (name: string) => chalk.bold.cyan(`▸ ${name}:`);
         this.nuxt.options.cli.badgeMessages.push(
