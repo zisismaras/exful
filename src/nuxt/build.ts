@@ -1,4 +1,5 @@
 import {join} from "path";
+import {existsSync, mkdirSync} from "fs";
 import {utimesSync} from "fs";
 import {Module} from "@nuxt/types";
 import {getDiscover, getGlobalHooksDiscover} from "../discover";
@@ -9,6 +10,9 @@ const exfulBuild: Module = function() {
     setDefaultOptions(this.options);
     const exfulOptions = this.options.exful as ExfulOptions;
     const exfulDir = join(this.options.rootDir, "exful");
+    if (!existsSync(exfulDir)) {
+        mkdirSync(exfulDir);
+    }
 
     this.nuxt.options.alias["~exful"] = join(__dirname, "..");
     this.nuxt.options.alias["~express"] = join(
@@ -62,13 +66,12 @@ const exfulBuild: Module = function() {
         }
     });
 
-    //the types are generated in the root directory, so ts can pick it up
     const typeLoaderPath = join(__dirname, "..", "..", "templates",  "typeLoader.js");
     this.addTemplate({
         src: typeLoaderPath,
-        fileName: "../exfulTypes.ts",
+        fileName: "../exful/types.ts",
         options: {
-            discover: getDiscover(exfulDir, "./exful")
+            discover: getDiscover(exfulDir, ".")
         }
     });
 
