@@ -69,9 +69,9 @@ const exfulBuild: Module = function() {
     const typeLoaderPath = join(__dirname, "..", "..", "templates",  "typeLoader.js");
     this.addTemplate({
         src: typeLoaderPath,
-        fileName: "../exful/types.ts",
+        fileName: "../exfulTypes.ts",
         options: {
-            discover: getDiscover(exfulDir, ".")
+            discover: getDiscover(exfulDir, "./exful")
         }
     });
 
