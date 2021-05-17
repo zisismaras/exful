@@ -9,9 +9,13 @@
     "./nuxt/build": "./dist/nuxt/build.js",
     "./nuxt/runtime": "./dist/nuxt/runtime.js"
   },
+  "bin": {
+    "exc": "./bin/exc.js"
+  },
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "bin"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
