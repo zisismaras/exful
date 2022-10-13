@@ -1,7 +1,7 @@
 {
   "name": "exful",
   "version": "1.0.0",
-  "description": "",
+  "description": "A highly experimental all in one state manager, API layer and server framework for nuxt ",
   "main": "dist/exful.js",
   "types": "dist/exful.d.ts",
   "exports": {
@@ -17,11 +17,15 @@
     "templates",
     "bin"
   ],
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "author": {
+    "name": "Zisis Maras",
+    "email": "contact@zisismaras.me",
+    "url": "https://github.com/zisismaras/exful"
   },
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "url": "https://github.com/zisismaras/exful"
+  },
+  "license": "MIT",
   "dependencies": {
     "chalk": "^4.1.1",
     "chokidar": "^3.5.1",
